@@ -1,0 +1,55 @@
+name: Validity Check for Training Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      
+  pull_request:      
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+  
+    steps:
+    - uses: actions/checkout@v2.4.2
+
+    - name: check if training pipeline has anything changed
+      uses: dorny/paths-filter@v2
+      id: training-pipeline-change
+      with:
+          filters: |
+              src:
+                - 'training_pipeline/**'
+
+    - uses: actions/setup-python@v4
+      if: steps.training-pipeline-change.outputs.src == 'true'
+      with:
+        python-version: '3.8'
+        
+    - name: 'Install required Python packages'
+      if: steps.training-pipeline-change.outputs.src == 'true'    
+      run: |
+        pip install -r requirements.txt
+
+#     - name: 'Unit Test'
+#       if: steps.training-pipeline-change.outputs.src == 'true'    
+#       working-directory: 'training_pipeline'
+#       run: | 
+#         pytest -m . -W ignore::DeprecationWarning
+
+    - name: 'Compile TFX Training Pipeline'
+      if: steps.training-pipeline-change.outputs.src == 'true'    
+      working-directory: 'training_pipeline'
+      run: |
+        tfx pipeline compile \
+          --pipeline-path kubeflow_runner.py \
+          --engine vertex
+          
+    - name: 'Create TFX Training Pipeline'
+      if: steps.training-pipeline-change.outputs.src == 'true'    
+      working-directory: 'training_pipeline'
+      run: |
+        tfx pipeline create \
+          --pipeline-path kubeflow_runner.py \
+          --engine vertex
