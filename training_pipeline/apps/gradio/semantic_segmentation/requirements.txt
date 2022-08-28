@@ -1,0 +1,7 @@
+numpy==1.23.0
+pillow==9.1.1
+matplotlib==3.5.2
+tensorflow==2.9.0
+torch==1.12.0
+git+https://github.com/huggingface/transformers
+datasets==2.3.2
