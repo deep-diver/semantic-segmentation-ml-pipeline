@@ -1,0 +1,8 @@
+pytest
+kfp
+tensorflow-cloud
+keras-tuner
+PyGithub
+wget
+oauth2client
+huggingface-hub
