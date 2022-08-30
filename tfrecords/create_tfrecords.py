@@ -103,7 +103,7 @@ def write_tfrecords(root_dir, dataset, split, batch_size):
         temp_ds = dataset[step * batch_size : (step + 1) * batch_size]
         shard_size = len(temp_ds["pixel_values"])
         filename = os.path.join(
-            root_dir, "{}-" + "{:02d}-{}.tfrec".format(split, step, shard_size)
+            root_dir, "{}-{:02d}-{}.tfrec".format(split, step, shard_size)
         )
 
         with tf.io.TFRecordWriter(filename) as out_file:
