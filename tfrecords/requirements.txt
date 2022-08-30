@@ -1,0 +1,5 @@
+datasets==2.4.0
+tensorflow==2.9.1
+pillow==9.2.0
+transformers==4.21.2
+jupyter==1.0.0
