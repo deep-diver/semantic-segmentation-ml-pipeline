@@ -14,6 +14,14 @@ This repository shows how to build a Machine Learning Pipeline for [Semantic Seg
 - [ ] Modify [configs.py](https://github.com/deep-diver/segformer-in-ml-pipeline/blob/main/training_pipeline/pipeline/configs.py) to reflect changes.
 - [ ] (Optional) Add custom TFX component to dynamically inject hyperameters to search with `Tuner`.
 
+## Formatting
+
+We use [black](https://pypi.org/project/black/) to lint Python source files. In order to apply it effortlessly, it is recommended to use [pre-commit](https://pre-commit.com/) hook, so run the following command before any contributions.
+
+```shell
+$ pre-commit install --hook-type pre-push
+```
+
 ## Acknowledgements
 
 We are thankful to the ML Developer Programs team at Google that provided GCP support.
