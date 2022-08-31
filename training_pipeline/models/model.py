@@ -72,15 +72,13 @@ def _model_exporter(model: tf.keras.Model):
         # Transpose to have the shape (batch_size, height/4, width/4, num_labels)
         logits = tf.transpose(logits, [0, 2, 3, 1])
 
-        print(images[_CONCRETE_INPUT])
-
         upsampled_logits = tf.image.resize(
             logits,
             images[_CONCRETE_INPUT].shape.as_list()[2:][::-1]
         )
 
-        pred_seg = tf.math.argmax(upsampled_logits, axis=-1)[0]
-        return {"pred_seg": pred_seg}
+        pred_seg = tf.math.argmax(upsampled_logits, axis=-1)
+        return {"logits": pred_seg}
 
     return serving_fn
 
