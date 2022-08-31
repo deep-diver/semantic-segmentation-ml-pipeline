@@ -1,6 +1,6 @@
 import datetime
 import os
-from typing import List
+from typing import List, Dict
 import absl
 import keras_tuner
 import tensorflow as tf
@@ -17,250 +17,236 @@ import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
 import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
 import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
 
-_TRAIN_DATA_SIZE = 128
-_EVAL_DATA_SIZE = 128
-_TRAIN_BATCH_SIZE = 32
-_EVAL_BATCH_SIZE = 32
-_CLASSIFIER_LEARNING_RATE = 1e-3
-_FINETUNE_LEARNING_RATE = 7e-6
-_CLASSIFIER_EPOCHS = 30
+from huggingface_hub import cached_download, hf_hub_url
+from datasets import load_dataset, load_metric
+from tensorflow.keras.optimizers import Adam
 
-_IMAGE_KEY = "image"
-_LABEL_KEY = "label"
+from transformers import (
+    SegformerFeatureExtractor,
+    TFSegformerForSemanticSegmentation,
+    create_optimizer,
+)
 
+from transformers.keras_callbacks import KerasMetricCallback
+
+_IMAGE_SHAPE = (512, 512)
+_TRAIN_BATCH_SIZE = 64
+_EVAL_BATCH_SIZE = 64
+_EPOCHS = 2
+
+feature_extractor = SegformerFeatureExtractor()
+
+CONCRETE_INPUT = "pixel_values"
 
 def INFO(text: str):
     absl.logging.info(text)
 
+def _serving_normalize_img(
+    img, mean=feature_extractor.image_mean, std=feature_extractor.image_std
+):
+    # Scale to the value range of [0, 1] first and then normalize.
+    img = img / 255
+    mean = tf.constant(mean)
+    std = tf.constant(std)
+    return (img - mean) / std
 
-def _transformed_name(key: str) -> str:
-    return key + "_xf"
+def _serving_preprocess(string_input):
+    decoded_input = tf.io.decode_base64(string_input)
+    decoded = tf.io.decode_jpeg(decoded_input, channels=3)
+    resized = tf.image.resize(decoded, size=_IMAGE_SHAPE)
+    normalized = _serving_normalize_img(resized)
+    normalized = tf.transpose(
+        normalized, (2, 0, 1)
+    )  # Since HF models are channel-first.
+    return normalized
+
+@tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
+def _serving_preprocess_fn(string_input):
+    decoded_images = tf.map_fn(
+        _serving_preprocess, string_input, dtype=tf.float32, back_prop=False
+    )
+    return {CONCRETE_INPUT: decoded_images}
 
 
-def _get_signature(model):
-    signatures = {
-        "serving_default": _get_serve_image_fn(model).get_concrete_function(
-            tf.TensorSpec(
-                shape=[None, 224, 224, 3],
-                dtype=tf.float32,
-                name=_transformed_name(_IMAGE_KEY),
-            )
+def _model_exporter(model: tf.keras.Model):
+    m_call = tf.function(model.call).get_concrete_function(
+        tf.TensorSpec(
+            shape=[None, 3, 512, 512], dtype=tf.float32, name=CONCRETE_INPUT
         )
+    )
+
+    @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
+    def serving_fn(string_input):       
+        images = _serving_preprocess_fn(string_input)
+        logits = m_call(**images)
+
+        # Transpose to have the shape (batch_size, height/4, width/4, num_labels)
+        logits = tf.transpose(logits, [0, 2, 3, 1])
+
+        upsampled_logits = tf.image.resize(
+            logits,
+            test_image.size[
+                ::-1
+            ],  # We reverse the shape of `image` because `image.size` returns width and height.
+        )
+
+        pred_seg = tf.math.argmax(upsampled_logits, axis=-1)[0]
+        return {"pred_seg": pred_seg}
+
+    return serving_fn
+
+def _parse_tfr(proto):
+    feature_description = {
+        "image": tf.io.VarLenFeature(tf.float32),
+        "image_shape": tf.io.VarLenFeature(tf.int64),
+        "label": tf.io.VarLenFeature(tf.float32),
+        "label_shape": tf.io.VarLenFeature(tf.int64),
     }
+    rec = tf.io.parse_single_example(proto, feature_description)
+    image_shape = tf.sparse.to_dense(rec["image_shape"])
+    image = tf.reshape(tf.sparse.to_dense(rec["image"]), image_shape)
+    label_shape = tf.sparse.to_dense(rec["label_shape"])
+    label = tf.reshape(tf.sparse.to_dense(rec["label"]), label_shape)
 
-    return signatures
+    return {"pixel_values": image, "labels": label}
 
+def _preprocess(example_batch):
+    images = example_batch["pixel_values"]
+    images = tf.transpose(images, perm=[0, 2, 3, 1]) # (batch_size, height, width, num_channels)
+    labels = tf.expand_dims(example_batch["labels"], -1) # Adds extra dimension, otherwise tf.image.resize won't work.
+    labels = tf.transpose(labels, perm=[0, 1, 2, 3]) # So, that TF can evaluation the shapes.
 
-def _get_serve_image_fn(model):
-    @tf.function
-    def serve_image_fn(image_tensor):
-        return model(image_tensor)
+    images = tf.image.resize(images, _IMAGE_SHAPE)
+    labels = tf.image.resize(labels, _IMAGE_SHAPE)
 
-    return serve_image_fn
-
-
-def _image_augmentation(image_features):
-    batch_size = tf.shape(image_features)[0]
-    image_features = tf.image.random_flip_left_right(image_features)
-    image_features = tf.image.resize_with_crop_or_pad(image_features, 250, 250)
-    image_features = tf.image.random_crop(image_features, (batch_size, 224, 224, 3))
-    return image_features
-
-
-def _data_augmentation(feature_dict):
-    image_features = feature_dict[_transformed_name(_IMAGE_KEY)]
-    image_features = _image_augmentation(image_features)
-    feature_dict[_transformed_name(_IMAGE_KEY)] = image_features
-    return feature_dict
-
+    images = tf.transpose(images, perm=[0, 3, 1, 2]) # (batch_size, num_channels, height, width)
+    labels = tf.squeeze(labels, -1)
+    
+    return {"pixel_values": images, "labels": labels}
 
 def _input_fn(
     file_pattern: List[str],
-    data_accessor: DataAccessor,
-    tf_transform_output: tft.TFTransformOutput,
+    batch_size: int = 32,
     is_train: bool = False,
-    batch_size: int = 200,
 ) -> tf.data.Dataset:
-    dataset = data_accessor.tf_dataset_factory(
-        file_pattern,
-        dataset_options.TensorFlowDatasetOptions(
-            batch_size=batch_size, label_key=_transformed_name(_LABEL_KEY)
-        ),
-        tf_transform_output.transformed_metadata.schema,
-    )
+    """Generates features and label for training.
+
+    Args:
+        file_pattern: List of paths or patterns of input tfrecord files.
+        batch_size: representing the number of consecutive elements of returned
+            dataset to combine in a single batch.
+
+    Returns:
+        A dataset that contains (features, indices) tuple where features is a
+            dictionary of Tensors, and indices is a single Tensor of label indices.
+    """
+    INFO(f"Reading data from: {file_pattern}")
+
+    dataset = tf.data.TFRecordDataset(
+        tf.io.gfile.glob(file_pattern[0] + ".gz"),
+        num_parallel_reads=AUTO,
+        compression_type="GZIP"
+    ).map(_parse_tfr, num_parallel_calls=AUTO)
 
     if is_train:
-        dataset = dataset.map(lambda x, y: (_data_augmentation(x), y))
+        dataset = dataset.shuffle(batch_size * 2)
 
+    dataset = dataset.batch(batch_size)
+    dataset = dataset.prefetch(AUTO)
+    dataset = dataset.map(_preprocess)
     return dataset
 
+def _get_label_info() -> tuple[Dict, Dict, int]:
+    hf_dataset_identifier = "segments/sidewalk-semantic"
+    repo_id = f"datasets/{hf_dataset_identifier}"
+    filename = "id2label.json"
 
-def _get_hyperparameters() -> keras_tuner.HyperParameters:
-    hp = keras_tuner.HyperParameters()
-    hp.Choice("learning_rate", [1e-3, 1e-2], default=1e-3)
-    return hp
+    id2label = json.load(open(cached_download(hf_hub_url(repo_id, filename)), "r"))
+    id2label = {int(k): v for k, v in id2label.items()}
+    label2id = {v: k for k, v in id2label.items()}
+
+    num_labels = len(id2label)
+
+    return ld2label, label2id, num_labels
+
+def _build_metric_callback() -> KerasMetricCallback:
+    metric = load_metric("mean_iou")
+
+    def compute_metrics(eval_pred):
+        logits, labels = eval_pred
+        # logits are of shape (batch_size, num_labels, height, width), so
+        # we first transpose them to (batch_size, height, width, num_labels)
+        logits = tf.transpose(logits, perm=[0, 2, 3, 1])
+        # scale the logits to the size of the label
+        logits_resized = tf.image.resize(
+            logits,
+            size=tf.shape(labels)[1:],
+            method="bilinear",
+        )
+        # compute the prediction labels and compute the metric
+        pred_labels = tf.argmax(logits_resized, axis=-1)
+        metrics = metric.compute(
+            predictions=pred_labels,
+            references=labels,
+            num_labels=num_labels,
+            ignore_index=-1,
+            reduce_labels=feature_extractor.reduce_labels,
+        )
+        return {"val_" + k: v for k, v in metrics.items()}
 
 
-def _build_keras_model(hparams: keras_tuner.HyperParameters) -> tf.keras.Model:
-    base_model = tf.keras.applications.ResNet50(
-        input_shape=(224, 224, 3), include_top=False, weights="imagenet", pooling="max"
+    metric_callback = KerasMetricCallback(
+        metric_fn=compute_metrics,
+        eval_dataset=val_dataset,
+        batch_size=BATCH_SIZE,
+        label_cols=["labels"],
     )
-    base_model.input_spec = None
-    base_model.trainable = False
 
-    model = tf.keras.Sequential(
-        [
-            tf.keras.layers.InputLayer(
-                input_shape=(224, 224, 3), name=_transformed_name(_IMAGE_KEY)
-            ),
-            base_model,
-            tf.keras.layers.Dropout(0.1),
-            tf.keras.layers.Dense(10, activation="softmax"),
-        ]
+    return metric_callback
+
+def _build_model() -> tf.keras.Model:
+    id2label, label2id, num_labels = _get_label_info()
+
+    model_checkpoint = "nvidia/mit-b0"
+    model = TFSegformerForSemanticSegmentation.from_pretrained(
+        model_checkpoint,
+        num_labels=num_labels,
+        id2label=id2label,
+        label2id=label2id,
+        ignore_mismatched_sizes=True,  # Will ensure the segmentation specific components are reinitialized.
     )
 
-    model.compile(
-        loss="sparse_categorical_crossentropy",
-        optimizer=Adam(learning_rate=hparams.get("learning_rate")),
-        metrics=["sparse_categorical_accuracy"],
-    )
+    optimizer = Adam(learning_rate=lr)
+    model.compile(optimizer)
     model.summary(print_fn=INFO)
 
     return model
 
-
-def cloud_tuner_fn(fn_args: FnArgs) -> TunerFnResult:
-    TUNING_ARGS_KEY = vertex_tuner_const.TUNING_ARGS_KEY
-    TRAINING_ARGS_KEY = vertex_training_const.TRAINING_ARGS_KEY
-    VERTEX_PROJECT_KEY = "project"
-    VERTEX_REGION_KEY = "region"
-
-    tuner = CloudTuner(
-        _build_keras_model,
-        max_trials=6,
-        hyperparameters=_get_hyperparameters(),
-        project_id=fn_args.custom_config[TUNING_ARGS_KEY][VERTEX_PROJECT_KEY],
-        region=fn_args.custom_config[TUNING_ARGS_KEY][VERTEX_REGION_KEY],
-        objective="val_sparse_categorical_accuracy",
-        directory=fn_args.working_dir,
-    )
-
-    tf_transform_output = tft.TFTransformOutput(fn_args.transform_graph_path)
-
-    train_dataset = _input_fn(
-        fn_args.train_files,
-        fn_args.data_accessor,
-        tf_transform_output,
-        is_train=True,
-        batch_size=_TRAIN_BATCH_SIZE,
-    )
-
-    eval_dataset = _input_fn(
-        fn_args.eval_files,
-        fn_args.data_accessor,
-        tf_transform_output,
-        is_train=False,
-        batch_size=_EVAL_BATCH_SIZE,
-    )
-
-    return TunerFnResult(
-        tuner=tuner,
-        fit_kwargs={
-            "x": train_dataset,
-            "validation_data": eval_dataset,
-            "steps_per_epoch": steps_per_epoch,
-            "validation_steps": fn_args.eval_steps,
-        },
-    )
-
-
-def tuner_fn(fn_args: FnArgs) -> TunerFnResult:
-    steps_per_epoch = int(_TRAIN_DATA_SIZE / _TRAIN_BATCH_SIZE)
-
-    tuner = keras_tuner.RandomSearch(
-        _build_keras_model,
-        max_trials=6,
-        hyperparameters=_get_hyperparameters(),
-        allow_new_entries=False,
-        objective=keras_tuner.Objective("val_sparse_categorical_accuracy", "max"),
-        directory=fn_args.working_dir,
-        project_name="img_classification_tuning",
-    )
-
-    tf_transform_output = tft.TFTransformOutput(fn_args.transform_graph_path)
-
-    train_dataset = _input_fn(
-        fn_args.train_files,
-        fn_args.data_accessor,
-        tf_transform_output,
-        is_train=True,
-        batch_size=_TRAIN_BATCH_SIZE,
-    )
-
-    eval_dataset = _input_fn(
-        fn_args.eval_files,
-        fn_args.data_accessor,
-        tf_transform_output,
-        is_train=False,
-        batch_size=_EVAL_BATCH_SIZE,
-    )
-
-    return TunerFnResult(
-        tuner=tuner,
-        fit_kwargs={
-            "x": train_dataset,
-            "validation_data": eval_dataset,
-            "steps_per_epoch": steps_per_epoch,
-            "validation_steps": fn_args.eval_steps,
-        },
-    )
-
-
 def run_fn(fn_args: FnArgs):
-    steps_per_epoch = int(_TRAIN_DATA_SIZE / _TRAIN_BATCH_SIZE)
-    total_epochs = int(fn_args.train_steps / steps_per_epoch)
-    if _CLASSIFIER_EPOCHS > total_epochs:
-        raise ValueError("Classifier epochs is greater than the total epochs")
-
-    tf_transform_output = tft.TFTransformOutput(fn_args.transform_output)
-
     train_dataset = _input_fn(
         fn_args.train_files,
-        fn_args.data_accessor,
-        tf_transform_output,
         is_train=True,
         batch_size=_TRAIN_BATCH_SIZE,
     )
 
     eval_dataset = _input_fn(
         fn_args.eval_files,
-        fn_args.data_accessor,
-        tf_transform_output,
         is_train=False,
         batch_size=_EVAL_BATCH_SIZE,
     )
 
-    INFO("Tensorboard logging to {}".format(fn_args.model_run_dir))
-    tensorboard_callback = tf.keras.callbacks.TensorBoard(
-        log_dir=fn_args.model_run_dir, update_freq="batch"
-    )
+    model = _build_model()
+    metric_callback = _build_metric_callback()
 
-    if fn_args.hyperparameters:
-        hparams = keras_tuner.HyperParameters.from_config(fn_args.hyperparameters)
-    else:
-        hparams = _get_hyperparameters()
-    INFO(f"HyperParameters for training: ${hparams.get_config()}")
-
-    model = _build_keras_model(hparams)
     model.fit(
         train_dataset,
-        epochs=_CLASSIFIER_EPOCHS,
-        steps_per_epoch=steps_per_epoch,
         validation_data=eval_dataset,
-        validation_steps=fn_args.eval_steps,
-        callbacks=[tensorboard_callback],
+        callbacks=[metric_callback],
+        epochs=_EPOCHS,
     )
 
     model.save(
-        fn_args.serving_model_dir, save_format="tf", signatures=_get_signature(model)
+        fn_args.serving_model_dir, 
+        save_format="tf", 
+        signatures=_model_exporter(model)
     )

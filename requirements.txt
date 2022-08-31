@@ -1,8 +1,5 @@
 pytest
-tfx==1.9.1
 kfp
-tensorflow-cloud
-keras-tuner
-PyGithub
-wget
 huggingface-hub
+transformers
+datasets
