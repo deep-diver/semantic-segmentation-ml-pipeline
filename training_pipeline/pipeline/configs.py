@@ -4,7 +4,7 @@ import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
 import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
 import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
 
-PIPELINE_NAME = "resnet50-tfx-pipeline-hf-space-18"
+PIPELINE_NAME = "segformer-training-pipeline"
 
 try:
     import google.auth  # pylint: disable=g-import-not-at-top  # pytype: disable=import-error
@@ -23,7 +23,7 @@ PIPELINE_IMAGE = f"gcr.io/{GOOGLE_CLOUD_PROJECT}/{PIPELINE_NAME}"
 
 OUTPUT_DIR = os.path.join("gs://", GCS_BUCKET_NAME)
 PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
-DATA_PATH = f"gs://{GCS_BUCKET_NAME}/data/"
+DATA_PATH = "gs://sidewalks-tfx-hf/sidewalks-tfrecords/"
 
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"

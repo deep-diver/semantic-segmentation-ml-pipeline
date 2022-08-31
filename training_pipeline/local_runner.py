@@ -45,9 +45,7 @@ def run():
             pipeline_root=PIPELINE_ROOT,
             data_path=DATA_PATH,
             modules={
-                "preprocessing_fn": configs.PREPROCESSING_FN,
                 "training_fn": configs.TRAINING_FN,
-                "tuner_fn": configs.TUNER_FN,
             },
             train_args=tfx.proto.TrainArgs(num_steps=configs.TRAIN_NUM_STEPS),
             eval_args=tfx.proto.EvalArgs(num_steps=configs.EVAL_NUM_STEPS),
