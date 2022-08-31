@@ -1,38 +1,31 @@
+from typing import List, Dict, Tuple
+
 import os
 import json
 import datetime
-from typing import List, Dict, Tuple
 import absl
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-
-from tfx.components.trainer.fn_args_utils import DataAccessor
 from tfx.components.trainer.fn_args_utils import FnArgs
-from tfx.dsl.io import fileio
-from tfx_bsl.tfxio import dataset_options
-
-from huggingface_hub import cached_download, hf_hub_url
-from datasets import load_dataset, load_metric
-from tensorflow.keras.optimizers import Adam
 
 from transformers import (
     SegformerFeatureExtractor,
     TFSegformerForSemanticSegmentation,
     create_optimizer,
 )
-
+from datasets import load_metric
 from transformers.keras_callbacks import KerasMetricCallback
 
+from huggingface_hub import cached_download, hf_hub_url
+
+_CONCRETE_INPUT = "pixel_values"
 _IMAGE_SHAPE = (512, 512)
 _TRAIN_BATCH_SIZE = 64
 _EVAL_BATCH_SIZE = 64
 _EPOCHS = 2
+_LR = 0.00006
 
 feature_extractor = SegformerFeatureExtractor()
-
-_CONCRETE_INPUT = "pixel_values"
-
-lr = 0.00006
 
 def INFO(text: str):
     absl.logging.info(text)
@@ -125,17 +118,6 @@ def _input_fn(
     batch_size: int = 32,
     is_train: bool = False,
 ) -> tf.data.Dataset:
-    """Generates features and label for training.
-
-    Args:
-        file_pattern: List of paths or patterns of input tfrecord files.
-        batch_size: representing the number of consecutive elements of returned
-            dataset to combine in a single batch.
-
-    Returns:
-        A dataset that contains (features, indices) tuple where features is a
-            dictionary of Tensors, and indices is a single Tensor of label indices.
-    """
     INFO(f"Reading data from: {file_pattern}")
 
     dataset = tf.data.TFRecordDataset(
@@ -210,7 +192,7 @@ def _build_model(id2label, label2id, num_labels) -> tf.keras.Model:
         ignore_mismatched_sizes=True,  # Will ensure the segmentation specific components are reinitialized.
     )
 
-    optimizer = Adam(learning_rate=lr)
+    optimizer = Adam(learning_rate=_LR)
     model.compile(optimizer)
     model.summary(print_fn=INFO)
 
