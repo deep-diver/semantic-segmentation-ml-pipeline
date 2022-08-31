@@ -225,5 +225,5 @@ def run_fn(fn_args: FnArgs):
     model.save(
         fn_args.serving_model_dir,
         save_format="tf",
-       # signatures=_model_exporter(model)
+        signatures=_model_exporter(model)
     )
