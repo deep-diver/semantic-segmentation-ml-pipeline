@@ -1,21 +1,15 @@
-import datetime
 import os
-from typing import List, Dict
+import json
+import datetime
+from typing import List, Dict, Tuple
 import absl
-import keras_tuner
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
-import tensorflow_transform as tft
 
-from tensorflow_cloud import CloudTuner
-from tfx.v1.components import TunerFnResult
 from tfx.components.trainer.fn_args_utils import DataAccessor
 from tfx.components.trainer.fn_args_utils import FnArgs
 from tfx.dsl.io import fileio
 from tfx_bsl.tfxio import dataset_options
-import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
-import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
-import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
 
 from huggingface_hub import cached_download, hf_hub_url
 from datasets import load_dataset, load_metric
@@ -36,7 +30,9 @@ _EPOCHS = 2
 
 feature_extractor = SegformerFeatureExtractor()
 
-CONCRETE_INPUT = "pixel_values"
+_CONCRETE_INPUT = "pixel_values"
+
+lr = 0.00006
 
 def INFO(text: str):
     absl.logging.info(text)
@@ -65,27 +61,27 @@ def _serving_preprocess_fn(string_input):
     decoded_images = tf.map_fn(
         _serving_preprocess, string_input, dtype=tf.float32, back_prop=False
     )
-    return {CONCRETE_INPUT: decoded_images}
+    return {_CONCRETE_INPUT: decoded_images}
 
 
 def _model_exporter(model: tf.keras.Model):
     m_call = tf.function(model.call).get_concrete_function(
         tf.TensorSpec(
-            shape=[None, 3, 512, 512], dtype=tf.float32, name=CONCRETE_INPUT
+            shape=[None, 3, 512, 512], dtype=tf.float32, name=_CONCRETE_INPUT
         )
     )
 
     @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
-    def serving_fn(string_input):       
+    def serving_fn(string_input):
         images = _serving_preprocess_fn(string_input)
-        logits = m_call(**images)
+        logits = m_call(**images).logits
 
         # Transpose to have the shape (batch_size, height/4, width/4, num_labels)
         logits = tf.transpose(logits, [0, 2, 3, 1])
 
         upsampled_logits = tf.image.resize(
             logits,
-            test_image.size[
+            images.size[
                 ::-1
             ],  # We reverse the shape of `image` because `image.size` returns width and height.
         )
@@ -121,7 +117,7 @@ def _preprocess(example_batch):
 
     images = tf.transpose(images, perm=[0, 3, 1, 2]) # (batch_size, num_channels, height, width)
     labels = tf.squeeze(labels, -1)
-    
+
     return {"pixel_values": images, "labels": labels}
 
 def _input_fn(
@@ -144,19 +140,19 @@ def _input_fn(
 
     dataset = tf.data.TFRecordDataset(
         tf.io.gfile.glob(file_pattern[0] + ".gz"),
-        num_parallel_reads=AUTO,
+        num_parallel_reads=tf.data.AUTOTUNE,
         compression_type="GZIP"
-    ).map(_parse_tfr, num_parallel_calls=AUTO)
+    ).map(_parse_tfr, num_parallel_calls=tf.data.AUTOTUNE)
 
     if is_train:
         dataset = dataset.shuffle(batch_size * 2)
 
     dataset = dataset.batch(batch_size)
-    dataset = dataset.prefetch(AUTO)
+    dataset = dataset.prefetch(tf.data.AUTOTUNE)
     dataset = dataset.map(_preprocess)
     return dataset
 
-def _get_label_info() -> tuple[Dict, Dict, int]:
+def _get_label_info() -> Tuple[Dict, Dict, int]:
     hf_dataset_identifier = "segments/sidewalk-semantic"
     repo_id = f"datasets/{hf_dataset_identifier}"
     filename = "id2label.json"
@@ -167,9 +163,9 @@ def _get_label_info() -> tuple[Dict, Dict, int]:
 
     num_labels = len(id2label)
 
-    return ld2label, label2id, num_labels
+    return id2label, label2id, num_labels
 
-def _build_metric_callback() -> KerasMetricCallback:
+def _build_metric_callback(eval_dataset, num_labels) -> KerasMetricCallback:
     metric = load_metric("mean_iou")
 
     def compute_metrics(eval_pred):
@@ -197,16 +193,14 @@ def _build_metric_callback() -> KerasMetricCallback:
 
     metric_callback = KerasMetricCallback(
         metric_fn=compute_metrics,
-        eval_dataset=val_dataset,
-        batch_size=BATCH_SIZE,
+        eval_dataset=eval_dataset,
+        batch_size=_EVAL_BATCH_SIZE,
         label_cols=["labels"],
     )
 
     return metric_callback
 
-def _build_model() -> tf.keras.Model:
-    id2label, label2id, num_labels = _get_label_info()
-
+def _build_model(id2label, label2id, num_labels) -> tf.keras.Model:
     model_checkpoint = "nvidia/mit-b0"
     model = TFSegformerForSemanticSegmentation.from_pretrained(
         model_checkpoint,
@@ -235,8 +229,10 @@ def run_fn(fn_args: FnArgs):
         batch_size=_EVAL_BATCH_SIZE,
     )
 
-    model = _build_model()
-    metric_callback = _build_metric_callback()
+    id2label, label2id, num_labels = _get_label_info()
+
+    model = _build_model(id2label, label2id, num_labels)
+    metric_callback = _build_metric_callback(eval_dataset, num_labels)
 
     model.fit(
         train_dataset,
@@ -244,9 +240,8 @@ def run_fn(fn_args: FnArgs):
         callbacks=[metric_callback],
         epochs=_EPOCHS,
     )
-
     model.save(
-        fn_args.serving_model_dir, 
-        save_format="tf", 
-        signatures=_model_exporter(model)
+        fn_args.serving_model_dir,
+        save_format="tf",
+       # signatures=_model_exporter(model)
     )
