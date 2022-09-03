@@ -23,7 +23,7 @@ def preprocessing_fn(inputs):
         inputs[_IMAGE_KEY],
         fn_output_signature=(tf.uint8),
     )
-    image_features = tf.image.resize(image_features, [224, 224])
+    image_features = tf.image.resize(image_features, [128, 128])
     image_features = resnet50.preprocess_input(image_features)
 
     outputs[_transformed_name(_IMAGE_KEY)] = image_features
