@@ -1,0 +1,92 @@
+name: Trigger Training Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      gcpProject:
+        description: 'GCP Project for Vertex AI Pipeline'
+        required: true
+        default: 'gcp-ml-172005'
+      gcpRegion:
+        description: 'GCP Region for Vertex AI Pipeline'
+        required: true
+        default: 'us-central1'
+      pipelineName:
+        description: 'TFX Pipeline Name to Trigger'
+        required: true
+        default: 'segformer-training-pipeline'
+    
+jobs:
+  cd:
+    runs-on: ubuntu-latest
+  
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+    - uses: actions/checkout@v2.4.2
+    
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+        
+    - name: 'Install required Python packages'
+      run: |
+        pip install -r requirements.txt
+    
+    - name: 'Replace GCP Project Strings'
+      id: prepare-step
+      run: |
+        gcp_key=`echo ${{ github.event.inputs.gcpProject }} | sed -e "s/-/_/g"`
+        echo "::set-output name=GCP_SECRET_KEY::$gcp_key"
+        
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v0'
+      env:
+        GCP_SECRET_KEY: ${{ steps.prepare-step.outputs.GCP_SECRET_KEY }}
+      with:
+        credentials_json: '${{ secrets[env.GCP_SECRET_KEY] }}'
+        
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v0'
+
+    - name: 'Set up docker auth in gcloud'
+      run: |
+        gcloud --quiet auth configure-docker
+
+    - name: 'Replace Access Token Placeholder'
+      working-directory: 'training_pipeline'
+      env: 
+        GH_ACCESS_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+        HF_ACCESS_TOKEN: ${{ secrets.HF_ACCESS_TOKEN }}
+      run: |
+        envsubst '$GH_ACCESS_TOKEN, $HF_ACCESS_TOKEN' < pipeline/configs.py > pipeline/configs_tmp.py
+        mv pipeline/configs_tmp.py pipeline/configs.py
+        cat pipeline/configs.py
+
+    - name: 'Compile TFX Training Pipeline'
+      working-directory: 'training_pipeline'
+      run: |
+        tfx pipeline compile \
+          --pipeline-path kubeflow_runner.py \
+          --engine vertex
+          
+    - name: 'Create TFX Training Pipeline'
+      working-directory: 'training_pipeline'
+      run: |
+        tfx pipeline create \
+          --pipeline-path kubeflow_runner.py \
+          --engine vertex \
+          --build-image
+          
+    - name: 'Run TFX Training Pipeline'
+      working-directory: 'training_pipeline'
+      run: |
+          tfx run create \
+            --engine vertex \
+            --pipeline-name ${{ github.event.inputs.pipelineName }} \
+            --project ${{ github.event.inputs.gcpProject }} \
+            --region ${{ github.event.inputs.gcpRegion }}
+            
+    
