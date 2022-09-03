@@ -47,7 +47,7 @@ GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
     vertex_const.VERTEX_REGION_KEY: GOOGLE_CLOUD_REGION,
     vertex_training_const.TRAINING_ARGS_KEY: {
-        "project": GOOGLE_CLOUD_PROJECT,
+        # "project": GOOGLE_CLOUD_PROJECT,
         "worker_pool_specs": [
             {
                 "machine_spec": {
@@ -98,7 +98,7 @@ GCP_AI_PLATFORM_SERVING_ARGS = {
     vertex_const.VERTEX_REGION_KEY: GOOGLE_CLOUD_REGION,
     vertex_const.VERTEX_CONTAINER_IMAGE_URI_KEY: "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-8:latest",
     vertex_const.SERVING_ARGS_KEY: {
-        "project_id": GOOGLE_CLOUD_PROJECT,
+        # "project_id": GOOGLE_CLOUD_PROJECT,
         "deployed_model_display_name": PIPELINE_NAME.replace("-", "_"),
         "endpoint_name": "prediction-" + PIPELINE_NAME.replace("-", "_"),
         "traffic_split": {"0": 100},
