@@ -66,7 +66,7 @@ def _float_feature(value):
 
 
 def create_tfrecord(image: Image, label: Image):
-    image = process_image(image, label)
+    image, label = process_image(image, label)
     image_dims = image.shape
     label_dims = label.shape
 
