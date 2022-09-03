@@ -1,6 +1,6 @@
 pytest
+tfx
 kfp
 huggingface-hub
-transformers
 datasets
 pillow
