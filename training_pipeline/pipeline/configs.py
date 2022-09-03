@@ -103,7 +103,7 @@ GCP_AI_PLATFORM_SERVING_ARGS = {
         "endpoint_name": "prediction-" + PIPELINE_NAME.replace("-", "_"),
         "traffic_split": {"0": 100},
         "machine_type": "n1-standard-4",
-        "min_replica_count": 1,
+        "min_replica_count": 1, 
         "max_replica_count": 1,
     },
 }
