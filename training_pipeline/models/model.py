@@ -77,15 +77,6 @@ _LR = 0.00006
 def INFO(text: str):
     absl.logging.info(text)
 
-def _serving_normalize_img(
-    img, mean=feature_extractor.image_mean, std=feature_extractor.image_std
-):
-    # Scale to the value range of [0, 1] first and then normalize.
-    img = img / 255
-    mean = tf.constant(mean)
-    std = tf.constant(std)
-    return (img - mean) / std
-
 def _serving_preprocess(string_input):
     decoded_input = tf.io.decode_base64(string_input)
     decoded = tf.io.decode_jpeg(decoded_input, channels=3)
