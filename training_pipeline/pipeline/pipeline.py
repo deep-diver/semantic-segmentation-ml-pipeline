@@ -45,49 +45,28 @@ def create_pipeline(
 ) -> tfx.dsl.Pipeline:
     components = []
 
-    input_config = example_gen_pb2.Input(splits=[
-        example_gen_pb2.Input.Split(name='train', pattern='train/*'),
-        example_gen_pb2.Input.Split(name='eval', pattern='eval/*')
-    ])
-
-    example_gen = ImportExampleGen(
-        input_base=data_path,
-        input_config=input_config
+    input_config = example_gen_pb2.Input(
+        splits=[
+            example_gen_pb2.Input.Split(name="train", pattern="train-*"),
+            example_gen_pb2.Input.Split(name="eval", pattern="val-*"),
+        ]
     )
+    example_gen = ImportExampleGen(input_base=data_path, input_config=input_config)
     components.append(example_gen)
 
-    # trainer_args = {
-    #     "run_fn": modules["training_fn"],
-    #     "examples": example_gen.outputs["examples"],
-    #     "train_args": train_args,
-    #     "eval_args": eval_args,
-    #     "custom_config": ai_platform_training_args,
-    # }
-    # trainer = VertexTrainer(**trainer_args)
-    # components.append(trainer)
-
-    # pusher_args = {
-    #     "model": trainer.outputs["model"],
-    #     "custom_config": ai_platform_serving_args,
-    # }
-    # pusher = VertexPusher(**pusher_args)  # pylint: disable=unused-variable
-    # components.append(pusher)
- 
-    # pusher_args["custom_config"] = hf_model_release_args
-    # hf_model_pusher = HFModelPusher(**pusher_args).with_id("HFModelPusher")
-    # components.append(hf_model_pusher)
-
-    # space_pusher_args = {
-    #     "model": hf_model_pusher.outputs["pushed_model"],
-    #     "custom_config": hf_space_release_args,
-    # }
-    # hf_space_pusher = HFSpacePusher(**space_pusher_args).with_id("HFSpacePusher")
-    # components.append(hf_space_pusher)
+    trainer = Trainer(
+        run_fn=modules['training_fn'],
+        examples=example_gen.outputs["examples"],
+        train_args=tfx.proto.TrainArgs(num_steps=52),
+        eval_args=tfx.proto.EvalArgs(num_steps=5),
+    )
+    components.append(trainer)
 
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
         components=components,
-        enable_cache=True,
+        enable_cache=False,
         metadata_connection_config=metadata_connection_config,
     )
+
