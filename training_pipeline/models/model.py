@@ -8,24 +8,71 @@ import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tfx.components.trainer.fn_args_utils import FnArgs
 
-from transformers import (
-    SegformerFeatureExtractor,
-    TFSegformerForSemanticSegmentation,
-    create_optimizer,
-)
-from datasets import load_metric
-from transformers.keras_callbacks import KerasMetricCallback
+class InstanceNormalization(tf.keras.layers.Layer):
+  """Instance Normalization Layer (https://arxiv.org/abs/1607.08022)."""
 
-from huggingface_hub import cached_download, hf_hub_url
+  def __init__(self, epsilon=1e-5):
+    super(InstanceNormalization, self).__init__()
+    self.epsilon = epsilon
+
+  def build(self, input_shape):
+    self.scale = self.add_weight(
+        name='scale',
+        shape=input_shape[-1:],
+        initializer=tf.random_normal_initializer(1., 0.02),
+        trainable=True)
+
+    self.offset = self.add_weight(
+        name='offset',
+        shape=input_shape[-1:],
+        initializer='zeros',
+        trainable=True)
+
+  def call(self, x):
+    mean, variance = tf.nn.moments(x, axes=[1, 2], keepdims=True)
+    inv = tf.math.rsqrt(variance + self.epsilon)
+    normalized = (x - mean) * inv
+    return self.scale * normalized + self.offset
+
+def upsample(filters, size, norm_type='batchnorm', apply_dropout=False):
+  """Upsamples an input.
+  Conv2DTranspose => Batchnorm => Dropout => Relu
+  Args:
+    filters: number of filters
+    size: filter size
+    norm_type: Normalization type; either 'batchnorm' or 'instancenorm'.
+    apply_dropout: If True, adds the dropout layer
+  Returns:
+    Upsample Sequential Model
+  """
+
+  initializer = tf.random_normal_initializer(0., 0.02)
+
+  result = tf.keras.Sequential()
+  result.add(
+      tf.keras.layers.Conv2DTranspose(filters, size, strides=2,
+                                      padding='same',
+                                      kernel_initializer=initializer,
+                                      use_bias=False))
+
+  if norm_type.lower() == 'batchnorm':
+    result.add(tf.keras.layers.BatchNormalization())
+  elif norm_type.lower() == 'instancenorm':
+    result.add(InstanceNormalization())
+
+  if apply_dropout:
+    result.add(tf.keras.layers.Dropout(0.5))
+
+  result.add(tf.keras.layers.ReLU())
+
+  return result    
 
 _CONCRETE_INPUT = "pixel_values"
-_IMAGE_SHAPE = (512, 512)
+_IMAGE_SHAPE = (128, 128)
 _TRAIN_BATCH_SIZE = 64
 _EVAL_BATCH_SIZE = 64
 _EPOCHS = 2
 _LR = 0.00006
-
-feature_extractor = SegformerFeatureExtractor()
 
 def INFO(text: str):
     absl.logging.info(text)
@@ -42,12 +89,9 @@ def _serving_normalize_img(
 def _serving_preprocess(string_input):
     decoded_input = tf.io.decode_base64(string_input)
     decoded = tf.io.decode_jpeg(decoded_input, channels=3)
+    decoded = decoded / 255
     resized = tf.image.resize(decoded, size=_IMAGE_SHAPE)
-    normalized = _serving_normalize_img(resized)
-    normalized = tf.transpose(
-        normalized, (2, 0, 1)
-    )  # Since HF models are channel-first.
-    return normalized
+    return resized
 
 @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
 def _serving_preprocess_fn(string_input):
@@ -60,27 +104,16 @@ def _serving_preprocess_fn(string_input):
 def _model_exporter(model: tf.keras.Model):
     m_call = tf.function(model.call).get_concrete_function(
         tf.TensorSpec(
-            shape=[None, 3, 512, 512], dtype=tf.float32, name=_CONCRETE_INPUT
+            shape=[None, 128, 128, 3], dtype=tf.float32, name=_CONCRETE_INPUT
         )
     )
 
     @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
     def serving_fn(string_input):
         images = _serving_preprocess_fn(string_input)
-        logits = m_call(**images).logits
+        logits = m_call(**images)
 
-        # Transpose to have the shape (batch_size, height/4, width/4, num_labels)
-        logits = tf.transpose(logits, [0, 2, 3, 1])
-
-        upsampled_logits = tf.image.resize(
-            logits,
-            images.size[
-                ::-1
-            ],  # We reverse the shape of `image` because `image.size` returns width and height.
-        )
-
-        pred_seg = tf.math.argmax(upsampled_logits, axis=-1)[0]
-        return {"pred_seg": pred_seg}
+        return {"logits": logits}
 
     return serving_fn
 
@@ -108,10 +141,9 @@ def _preprocess(example_batch):
     images = tf.image.resize(images, _IMAGE_SHAPE)
     labels = tf.image.resize(labels, _IMAGE_SHAPE)
 
-    images = tf.transpose(images, perm=[0, 3, 1, 2]) # (batch_size, num_channels, height, width)
     labels = tf.squeeze(labels, -1)
-
-    return {"pixel_values": images, "labels": labels}
+    
+    return images, labels
 
 def _input_fn(
     file_pattern: List[str],
@@ -134,68 +166,55 @@ def _input_fn(
     dataset = dataset.map(_preprocess)
     return dataset
 
-def _get_label_info() -> Tuple[Dict, Dict, int]:
-    hf_dataset_identifier = "segments/sidewalk-semantic"
-    repo_id = f"datasets/{hf_dataset_identifier}"
-    filename = "id2label.json"
+def _build_model(num_labels:int) -> tf.keras.Model:
+    base_model = tf.keras.applications.MobileNetV2(input_shape=[128, 128, 3], include_top=False)
 
-    id2label = json.load(open(cached_download(hf_hub_url(repo_id, filename)), "r"))
-    id2label = {int(k): v for k, v in id2label.items()}
-    label2id = {v: k for k, v in id2label.items()}
+    # Use the activations of these layers
+    layer_names = [
+        'block_1_expand_relu',   # 64x64
+        'block_3_expand_relu',   # 32x32
+        'block_6_expand_relu',   # 16x16
+        'block_13_expand_relu',  # 8x8
+        'block_16_project',      # 4x4
+    ]
+    base_model_outputs = [base_model.get_layer(name).output for name in layer_names]
 
-    num_labels = len(id2label)
+    # Create the feature extraction model
+    down_stack = tf.keras.Model(inputs=base_model.input, outputs=base_model_outputs)
+    down_stack.trainable = False
 
-    return id2label, label2id, num_labels
+    up_stack = [
+        upsample(512, 3),  # 4x4 -> 8x8
+        upsample(256, 3),  # 8x8 -> 16x16
+        upsample(128, 3),  # 16x16 -> 32x32
+        upsample(64, 3),   # 32x32 -> 64x64
+    ]    
 
-def _build_metric_callback(eval_dataset, num_labels) -> KerasMetricCallback:
-    metric = load_metric("mean_iou")
+    inputs = tf.keras.layers.Input(shape=[128, 128, 3])
 
-    def compute_metrics(eval_pred):
-        logits, labels = eval_pred
-        # logits are of shape (batch_size, num_labels, height, width), so
-        # we first transpose them to (batch_size, height, width, num_labels)
-        logits = tf.transpose(logits, perm=[0, 2, 3, 1])
-        # scale the logits to the size of the label
-        logits_resized = tf.image.resize(
-            logits,
-            size=tf.shape(labels)[1:],
-            method="bilinear",
-        )
-        # compute the prediction labels and compute the metric
-        pred_labels = tf.argmax(logits_resized, axis=-1)
-        metrics = metric.compute(
-            predictions=pred_labels,
-            references=labels,
-            num_labels=num_labels,
-            ignore_index=-1,
-            reduce_labels=feature_extractor.reduce_labels,
-        )
-        return {"val_" + k: v for k, v in metrics.items()}
+    # Downsampling through the model
+    skips = down_stack(inputs)
+    x = skips[-1]
+    skips = reversed(skips[:-1])
 
+    # Upsampling and establishing the skip connections
+    for up, skip in zip(up_stack, skips):
+        x = up(x)
+        concat = tf.keras.layers.Concatenate()
+        x = concat([x, skip])
 
-    metric_callback = KerasMetricCallback(
-        metric_fn=compute_metrics,
-        eval_dataset=eval_dataset,
-        batch_size=_EVAL_BATCH_SIZE,
-        label_cols=["labels"],
-    )
+    # This is the last layer of the model
+    last = tf.keras.layers.Conv2DTranspose(
+        filters=num_labels, kernel_size=3, strides=2,
+        padding='same',
+        name="labels")  #64x64 -> 128x128
 
-    return metric_callback
-
-def _build_model(id2label, label2id, num_labels) -> tf.keras.Model:
-    model_checkpoint = "nvidia/mit-b0"
-    model = TFSegformerForSemanticSegmentation.from_pretrained(
-        model_checkpoint,
-        num_labels=num_labels,
-        id2label=id2label,
-        label2id=label2id,
-        ignore_mismatched_sizes=True,  # Will ensure the segmentation specific components are reinitialized.
-    )
-
-    optimizer = Adam(learning_rate=_LR)
-    model.compile(optimizer)
-    model.summary(print_fn=INFO)
-
+    x = last(x)
+    
+    model = tf.keras.Model(inputs=inputs, outputs=x)
+    model.compile(optimizer='adam',
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
     return model
 
 def run_fn(fn_args: FnArgs):
@@ -211,17 +230,15 @@ def run_fn(fn_args: FnArgs):
         batch_size=_EVAL_BATCH_SIZE,
     )
 
-    id2label, label2id, num_labels = _get_label_info()
-
-    model = _build_model(id2label, label2id, num_labels)
-    metric_callback = _build_metric_callback(eval_dataset, num_labels)
+    num_labels = 35
+    model = _build_model(num_labels)
 
     model.fit(
         train_dataset,
         validation_data=eval_dataset,
-        callbacks=[metric_callback],
         epochs=_EPOCHS,
     )
+
     model.save(
         fn_args.serving_model_dir,
         save_format="tf",
