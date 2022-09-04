@@ -47,7 +47,7 @@ GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
     vertex_const.VERTEX_REGION_KEY: GOOGLE_CLOUD_REGION,
     vertex_training_const.TRAINING_ARGS_KEY: {
-        # "project": GOOGLE_CLOUD_PROJECT,
+        "project": GOOGLE_CLOUD_PROJECT,
         "worker_pool_specs": [
             {
                 "machine_spec": {
