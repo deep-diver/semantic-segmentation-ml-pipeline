@@ -80,7 +80,7 @@ def _parse_tfr(proto):
 
 def _preprocess(example_batch):
 	images = example_batch["pixel_values"]
-	images = tf.transpose(images, perm=[0, 2, 3, 1]) # (batch_size, height, width, num_channels)
+	images = tf.transpose(images, perm=[0, 1, 2, 3]) # TF can evaluation the shapes (batch_size,  num_channels, height, width)
 	labels = tf.expand_dims(example_batch["labels"], -1) # Adds extra dimension, otherwise tf.image.resize won't work.
 	labels = tf.transpose(labels, perm=[0, 1, 2, 3]) # So, that TF can evaluation the shapes.
 
