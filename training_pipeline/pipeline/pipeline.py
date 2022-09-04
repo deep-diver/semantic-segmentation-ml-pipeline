@@ -54,12 +54,22 @@ def create_pipeline(
     example_gen = ImportExampleGen(input_base=data_path, input_config=input_config)
     components.append(example_gen)
 
-    trainer = Trainer(
-        run_fn=modules['training_fn'],
-        examples=example_gen.outputs["examples"],
-        train_args=tfx.proto.TrainArgs(num_steps=52),
-        eval_args=tfx.proto.EvalArgs(num_steps=5),
-    )
+    # trainer = Trainer(
+    #     run_fn=modules['training_fn'],
+    #     examples=example_gen.outputs["examples"],
+    #     train_args=tfx.proto.TrainArgs(num_steps=52),
+    #     eval_args=tfx.proto.EvalArgs(num_steps=5),
+    # )
+    # components.append(trainer)
+
+    trainer_args = {
+        "run_fn": modules["training_fn"],
+        "examples": example_gen.outputs["examples"],
+        "train_args": train_args,
+        "eval_args": eval_args,
+        "custom_config": ai_platform_training_args,
+    }
+    trainer = VertexTrainer(**trainer_args)
     components.append(trainer)
 
     return pipeline.Pipeline(
