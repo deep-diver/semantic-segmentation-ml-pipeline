@@ -12,20 +12,19 @@ Usage:
 References:
 
     * https://github.com/GoogleCloudPlatform/practical-ml-vision-book/blob/master/05_create_dataset/05_split_tfrecord.ipynb
-    * https://github.com/huggingface/notebooks/blob/main/examples/image_classification-tf.ipynb
+    * https://www.tensorflow.org/tutorials/images/segmentation
 """
 
 import argparse
 import math
 import os
+from typing import Tuple
 
 import datasets
 import numpy as np
 import tensorflow as tf
 import tqdm
-import transformers
-
-FEATURE_EXTRACTOR = transformers.SegformerFeatureExtractor()
+from PIL import Image
 
 
 def load_sidewalks_dataset(args):
@@ -40,27 +39,22 @@ def load_sidewalks_dataset(args):
     return train_ds, val_ds
 
 
-def normalize_img(img, mean, std):
-    mean = tf.constant(mean)
-    std = tf.constant(std)
-    return (img - mean) / tf.maximum(std, tf.keras.backend.epsilon())
+def normalize_img(
+    image: np.ndarray, label: np.ndarray
+) -> Tuple[tf.Tensor, tf.Tensor]:
+    image = tf.cast(image, tf.float32) / 255.0
+    label -= 1
+    return image, label
 
 
-def process_image(image, mean, std):
+def process_image(image: Image, label: Image) -> Tuple[tf.Tensor, tf.Tensor]:
     image = np.array(image)
+    label = np.array(label)
     image = tf.convert_to_tensor(image)
-    image = tf.image.convert_image_dtype(
-        image, tf.float32
-    )  # takes care of scaling
+    label = tf.convert_to_tensor(label)
 
-    image = normalize_img(
-        image,
-        mean=mean,
-        std=std,
-    )
-
-    # transposition because HF models operate with channels-first layout
-    return tf.transpose(image, (2, 0, 1))
+    image, label = normalize_img(image, label)
+    return image, label
 
 
 def _int64_feature(value):
@@ -71,12 +65,9 @@ def _float_feature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def create_tfrecord(image, label, mean, std):
-    image = process_image(image, mean, std)
+def create_tfrecord(image: Image, label: Image):
+    image, label = process_image(image, label)
     image_dims = image.shape
-
-    label = np.array(label)
-    label = tf.convert_to_tensor(label)
     label_dims = label.shape
 
     image = tf.reshape(image, [-1])  # flatten to 1D array
@@ -110,12 +101,7 @@ def write_tfrecords(root_dir, dataset, split, batch_size):
             for i in range(shard_size):
                 image = temp_ds["pixel_values"][i]
                 label = temp_ds["label"][i]
-                example = create_tfrecord(
-                    image,
-                    label,
-                    FEATURE_EXTRACTOR.image_mean,
-                    FEATURE_EXTRACTOR.image_std,
-                )
+                example = create_tfrecord(image, label)
                 out_file.write(example)
             print(
                 "Wrote file {} containing {} records".format(
