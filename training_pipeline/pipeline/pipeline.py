@@ -60,4 +60,3 @@ def create_pipeline(
         enable_cache=False,
         metadata_connection_config=metadata_connection_config,
     )
-

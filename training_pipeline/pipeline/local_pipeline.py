@@ -20,6 +20,7 @@ from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
 from tfx.types import Channel
 
+
 def create_pipeline(
     pipeline_name: Text,
     pipeline_root: Text,
@@ -42,7 +43,7 @@ def create_pipeline(
     components.append(example_gen)
 
     trainer = Trainer(
-        run_fn=modules['training_fn'],
+        run_fn=modules["training_fn"],
         examples=example_gen.outputs["examples"],
         train_args=train_args,
         eval_args=eval_args,

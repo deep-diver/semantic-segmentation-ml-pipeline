@@ -7,6 +7,7 @@ from tfx.proto import trainer_pb2
 from pipeline import configs
 from pipeline import pipeline
 
+
 def run():
     runner_config = runner.KubeflowV2DagRunnerConfig(
         default_image=configs.PIPELINE_IMAGE

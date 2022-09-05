@@ -14,6 +14,7 @@ model = TFSegformerForSemanticSegmentation.from_pretrained(
     "nvidia/segformer-b5-finetuned-ade-640-640"
 )
 
+
 def ade_palette():
     """ADE20K palette that maps each class to RGB values."""
     return [
@@ -169,13 +170,15 @@ def ade_palette():
         [92, 0, 255],
     ]
 
+
 labels_list = []
 
-with open(r'labels.txt', 'r') as fp:
+with open(r"labels.txt", "r") as fp:
     for line in fp:
         labels_list.append(line[:-1])
 
 colormap = np.asarray(ade_palette())
+
 
 def label_to_color_image(label):
     if label.ndim != 2:
@@ -186,6 +189,7 @@ def label_to_color_image(label):
 
     return colormap[label]
 
+
 def draw_plot(pred_img, seg):
     fig = plt.figure(figsize=(20, 15))
 
@@ -193,7 +197,7 @@ def draw_plot(pred_img, seg):
 
     plt.subplot(grid_spec[0])
     plt.imshow(pred_img)
-    plt.axis('off')
+    plt.axis("off")
 
     LABEL_NAMES = np.asarray(labels_list)
     FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
@@ -207,6 +211,7 @@ def draw_plot(pred_img, seg):
     plt.xticks([], [])
     ax.tick_params(width=0.0, labelsize=25)
     return fig
+
 
 def sepia(input_img):
     input_img = Image.fromarray(input_img)
@@ -233,15 +238,18 @@ def sepia(input_img):
 
     # Show image + mask
     pred_img = np.array(input_img) * 0.5 + color_seg * 0.5
-    pred_img = pred_img.astype(np.uint8)    
+    pred_img = pred_img.astype(np.uint8)
 
     fig = draw_plot(pred_img, seg)
     return fig
 
-demo = gr.Interface(sepia, 
-                    gr.Image(shape=(200, 200)), 
-                    outputs=['plot'], 
-#                    examples=["ADE_val_00000001.jpeg"],
-                    allow_flagging='never')
+
+demo = gr.Interface(
+    sepia,
+    gr.Image(shape=(200, 200)),
+    outputs=["plot"],
+    #                    examples=["ADE_val_00000001.jpeg"],
+    allow_flagging="never",
+)
 
 demo.launch()
