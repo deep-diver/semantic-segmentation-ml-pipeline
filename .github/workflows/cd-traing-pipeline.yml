@@ -40,7 +40,12 @@ jobs:
       run: |
         gcp_key=`echo ${{ github.event.inputs.gcpProject }} | sed -e "s/-/_/g"`
         echo "::set-output name=GCP_SECRET_KEY::$gcp_key"
-        
+    
+    - name: 'Replace GCP Project in config.py'
+      working-directory: 'training_pipeline'
+      run: |
+        sed -i 's/gcp-ml-172005/${{ github.event.inputs.gcpProject }}/g' pipeline/config.py
+    
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v0'
       env:
