@@ -5,7 +5,6 @@ from tfx import v1 as tfx
 from ml_metadata.proto import metadata_store_pb2
 from tfx.proto import example_gen_pb2
 
-import absl
 from tfx.components import ImportExampleGen
 from tfx.extensions.google_cloud_ai_platform.trainer.component import (
     Trainer as VertexTrainer,
