@@ -39,9 +39,6 @@ MODEL_VERSION_PLACEHOLDER = "$MODEL_VERSION"
 
 TRAIN_NUM_STEPS = 160
 EVAL_NUM_STEPS = 4
-NUM_PARALLEL_TRIALS = 3
-
-EVAL_ACCURACY_THRESHOLD = 0.6
 
 GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
@@ -65,34 +62,6 @@ GCP_AI_PLATFORM_TRAINING_ARGS = {
     "use_gpu": True,
 }
 
-GCP_AI_PLATFORM_TUNER_ARGS = {
-    vertex_const.ENABLE_VERTEX_KEY: True,
-    vertex_const.VERTEX_REGION_KEY: GOOGLE_CLOUD_REGION,
-    vertex_tuner_const.TUNING_ARGS_KEY: {
-        "project": GOOGLE_CLOUD_PROJECT,
-        # "serviceAccount": "vizier@gcp-ml-172005.iam.gserviceaccount.com",
-        "job_spec": {
-            "worker_pool_specs": [
-                {
-                    "machine_spec": {
-                        "machine_type": "n1-standard-4",
-                        "accelerator_type": "NVIDIA_TESLA_K80",
-                        "accelerator_count": 1,
-                    },
-                    "replica_count": 1,
-                    "container_spec": {
-                        "image_uri": PIPELINE_IMAGE,
-                    },
-                }
-            ],
-        },
-    },
-    vertex_tuner_const.REMOTE_TRIALS_WORKING_DIR_KEY: os.path.join(
-        PIPELINE_ROOT, "trials"
-    ),
-    "use_gpu": True,
-}
-
 GCP_AI_PLATFORM_SERVING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
     vertex_const.VERTEX_REGION_KEY: GOOGLE_CLOUD_REGION,
@@ -106,16 +75,6 @@ GCP_AI_PLATFORM_SERVING_ARGS = {
         "min_replica_count": 1,
         "max_replica_count": 1,
     },
-}
-
-GH_RELEASE_ARGS = {
-    "GH_RELEASE": {
-        "ACCESS_TOKEN": "$GH_ACCESS_TOKEN",
-        "USERNAME": "deep-diver",
-        "REPONAME": "PyGithubTest",
-        "BRANCH": "main",
-        "ASSETNAME": "saved_model.tar.gz",
-    }
 }
 
 HF_MODEL_RELEASE_ARGS = {
