@@ -1,48 +1,11 @@
-import os
 from absl import logging
 
 from tfx import v1 as tfx
-from tfx import proto
 from tfx.orchestration.kubeflow.v2 import kubeflow_v2_dag_runner as runner
-from tfx.orchestration.data_types import RuntimeParameter
-from tfx.proto import pusher_pb2
 from tfx.proto import trainer_pb2
-from tfx.proto import tuner_pb2
 
 from pipeline import configs
 from pipeline import pipeline
-
-"""
-RuntimeParameter could be injected with TFX CLI
-: 
---runtime-parameter output-config='{}' \
---runtime-parameter input-config='{"splits": [{"name": "train", "pattern": "span-[12]/train/*.tfrecord"}, {"name": "val", "pattern": "span-[12]/test/*.tfrecord"}]}' 
-  
-OR it could be injected programatically
-: 
-  import json
-  from kfp.v2.google import client
-
-  pipelines_client = client.AIPlatformClient(
-      project_id=GOOGLE_CLOUD_PROJECT, region=GOOGLE_CLOUD_REGION,
-  )
-  _ = pipelines_client.create_run_from_job_spec(
-      PIPELINE_DEFINITION_FILE,
-      enable_caching=False,
-      parameter_values={
-          "input-config": json.dumps(
-              {
-                  "splits": [
-                      {"name": "train", "pattern": "span-[12]/train/*.tfrecord"},
-                      {"name": "val", "pattern": "span-[12]/test/*.tfrecord"},
-                  ]
-              }
-          ),
-          "output-config": json.dumps({}),
-      },
-  )          
-"""
-
 
 def run():
     runner_config = runner.KubeflowV2DagRunnerConfig(
@@ -64,8 +27,8 @@ def run():
             eval_args=trainer_pb2.EvalArgs(num_steps=configs.EVAL_NUM_STEPS),
             ai_platform_training_args=configs.GCP_AI_PLATFORM_TRAINING_ARGS,
             ai_platform_serving_args=configs.GCP_AI_PLATFORM_SERVING_ARGS,
-            hf_model_release_args=configs.HF_MODEL_RELEASE_ARGS,
-            hf_space_release_args=configs.HF_SPACE_RELEASE_ARGS,
+            # hf_model_release_args=configs.HF_MODEL_RELEASE_ARGS,
+            # hf_space_release_args=configs.HF_SPACE_RELEASE_ARGS,
         )
     )
 
