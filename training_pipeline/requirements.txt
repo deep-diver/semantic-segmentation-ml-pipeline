@@ -1,8 +1,5 @@
 pytest
+tfx
 kfp
-tensorflow-cloud
-keras-tuner
-PyGithub
-wget
-oauth2client
 huggingface-hub
+pillow
