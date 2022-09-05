@@ -44,7 +44,7 @@ jobs:
     - name: 'Replace GCP Project in config.py'
       working-directory: 'training_pipeline'
       run: |
-        sed -i 's/gcp-ml-172005/${{ github.event.inputs.gcpProject }}/g' pipeline/config.py
+        sed -i 's/gcp-ml-172005/${{ github.event.inputs.gcpProject }}/g' pipeline/configs.py
     
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v0'
