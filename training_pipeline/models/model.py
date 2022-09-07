@@ -49,7 +49,8 @@ def _model_exporter(model: tf.keras.Model):
     def serving_fn(string_input):
         images = _serving_preprocess_fn(string_input)
         logits = m_call(**images)
-        return {"logits": logits}
+        seg_mask = tf.math.argmax(logits, -1)
+        return {"seg_mask": seg_mask}
 
     return serving_fn
 
@@ -64,16 +65,13 @@ def _model_exporter(model: tf.keras.Model):
 
 def _parse_tfr(proto):
     feature_description = {
-        "image": tf.io.VarLenFeature(tf.float32),
-        "image_shape": tf.io.VarLenFeature(tf.int64),
-        "label": tf.io.VarLenFeature(tf.float32),
-        "label_shape": tf.io.VarLenFeature(tf.int64),
+        "image": tf.io.FixedLenFeature([], tf.string), 
+        "label": tf.io.FixedLenFeature([], tf.string)
     }
     rec = tf.io.parse_single_example(proto, feature_description)
-    image_shape = tf.sparse.to_dense(rec["image_shape"])
-    image = tf.reshape(tf.sparse.to_dense(rec["image"]), image_shape)
-    label_shape = tf.sparse.to_dense(rec["label_shape"])
-    label = tf.reshape(tf.sparse.to_dense(rec["label"]), label_shape)
+
+    image = tf.io.parse_tensor(rec["image"], tf.float32)
+    label = tf.io.parse_tensor(rec["label"], tf.float32)
 
     return {"pixel_values": image, "labels": label}
 
