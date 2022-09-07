@@ -36,8 +36,8 @@ def create_pipeline(
 
     input_config = example_gen_pb2.Input(
         splits=[
-            example_gen_pb2.Input.Split(name="train", pattern="train-00-*.tfrec"),
-            example_gen_pb2.Input.Split(name="eval", pattern="val-00-*.tfrec"),
+            example_gen_pb2.Input.Split(name="train", pattern="train-*.tfrec"),
+            example_gen_pb2.Input.Split(name="eval", pattern="val-*.tfrec"),
         ]
     )
     example_gen = ImportExampleGen(input_base=data_path, input_config=input_config)
