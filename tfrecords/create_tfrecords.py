@@ -11,7 +11,7 @@ Usage:
 
 References:
 
-    * https://github.com/GoogleCloudPlatform/practical-ml-vision-book/blob/master/05_create_dataset/05_split_tfrecord.ipynb
+    * https://github.com/sayakpaul/TF-2.0-Hacks/blob/master/Cats_vs_Dogs_TFRecords.ipynb
     * https://www.tensorflow.org/tutorials/images/segmentation
 """
 
@@ -25,6 +25,8 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 from PIL import Image
+
+RESOLUTION = 512
 
 
 def load_sidewalks_dataset(args):
@@ -47,41 +49,42 @@ def normalize_img(
     return image, label
 
 
+def resize_img(
+    image: tf.Tensor, label: tf.Tensor
+) -> Tuple[tf.Tensor, tf.Tensor]:
+    image = tf.image.resize(image, (RESOLUTION, RESOLUTION))
+    label = tf.image.resize(label[..., None], (RESOLUTION, RESOLUTION))
+    label = tf.squeeze(label, -1)
+    return image, label
+
+
 def process_image(image: Image, label: Image) -> Tuple[tf.Tensor, tf.Tensor]:
     image = np.array(image)
     label = np.array(label)
+
     image = tf.convert_to_tensor(image)
     label = tf.convert_to_tensor(label)
 
+    image, label = resize_img(image, label)
     image, label = normalize_img(image, label)
     return image, label
 
 
-def _int64_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
-
-
-def _float_feature(value):
-    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+def _bytestring_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
 
 
 def create_tfrecord(image: Image, label: Image):
     image, label = process_image(image, label)
-    image_dims = image.shape
-    label_dims = label.shape
 
-    image = tf.reshape(image, [-1])  # flatten to 1D array
-    label = tf.reshape(label, [-1])  # flatten to 1D array
+    image = tf.io.serialize_tensor(image)
+    label = tf.io.serialize_tensor(label)
 
     return tf.train.Example(
         features=tf.train.Features(
             feature={
-                "image": _float_feature(image.numpy()),
-                "image_shape": _int64_feature(
-                    [image_dims[0], image_dims[1], image_dims[2]]
-                ),
-                "label": _float_feature(label.numpy()),
-                "label_shape": _int64_feature([label_dims[0], label_dims[1]]),
+                "image": _bytestring_feature([image.numpy()]),
+                "label": _bytestring_feature([label.numpy()]),
             }
         )
     ).SerializeToString()
