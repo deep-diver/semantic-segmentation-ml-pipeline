@@ -6,7 +6,8 @@ from tensorflow.keras.optimizers import Adam
 from tfx.components.trainer.fn_args_utils import FnArgs
 
 _CONCRETE_INPUT = "pixel_values"
-_IMAGE_SHAPE = (128, 128)
+_RAW_IMG_SIZE = 512
+_INPUT_IMG_SIZE = 128
 _TRAIN_BATCH_SIZE = 64
 _EVAL_BATCH_SIZE = 64
 _EPOCHS = 2
@@ -28,7 +29,7 @@ def _serving_preprocess(string_input):
     decoded_input = tf.io.decode_base64(string_input)
     decoded = tf.io.decode_jpeg(decoded_input, channels=3)
     decoded = decoded / 255
-    resized = tf.image.resize(decoded, size=_IMAGE_SHAPE)
+    resized = tf.image.resize(decoded, size=(_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
     return resized
 
 
@@ -42,7 +43,7 @@ def _serving_preprocess_fn(string_input):
 
 def _model_exporter(model: tf.keras.Model):
     m_call = tf.function(model.call).get_concrete_function(
-        tf.TensorSpec(shape=[None, 128, 128, 3], dtype=tf.float32, name=_CONCRETE_INPUT)
+        tf.TensorSpec(shape=[None, _INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], dtype=tf.float32, name=_CONCRETE_INPUT)
     )
 
     @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
@@ -82,11 +83,11 @@ def _preprocess(example_batch):
         example_batch["labels"], -1
     )  # Adds extra dimension, otherwise tf.image.resize won't work.
 
-    images = tf.reshape(images, (-1, 512, 512, 3))
-    labels = tf.reshape(labels, (-1, 512, 512, 1))    
+    images = tf.reshape(images, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 3))
+    labels = tf.reshape(labels, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 1))    
 
-    images = tf.image.resize(images, _IMAGE_SHAPE)
-    labels = tf.image.resize(labels, _IMAGE_SHAPE)
+    images = tf.image.resize(images, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
+    labels = tf.image.resize(labels, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
 
     labels = tf.squeeze(labels, -1)
 
