@@ -43,7 +43,11 @@ def _serving_preprocess_fn(string_input):
 
 def _model_exporter(model: tf.keras.Model):
     m_call = tf.function(model.call).get_concrete_function(
-        tf.TensorSpec(shape=[None, _INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], dtype=tf.float32, name=_CONCRETE_INPUT)
+        tf.TensorSpec(
+            shape=[None, _INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3],
+            dtype=tf.float32,
+            name=_CONCRETE_INPUT,
+        )
     )
 
     @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
@@ -66,8 +70,8 @@ def _model_exporter(model: tf.keras.Model):
 
 def _parse_tfr(proto):
     feature_description = {
-        "image": tf.io.FixedLenFeature([], tf.string), 
-        "label": tf.io.FixedLenFeature([], tf.string)
+        "image": tf.io.FixedLenFeature([], tf.string),
+        "label": tf.io.FixedLenFeature([], tf.string),
     }
     rec = tf.io.parse_single_example(proto, feature_description)
 
@@ -84,7 +88,7 @@ def _preprocess(example_batch):
     )  # Adds extra dimension, otherwise tf.image.resize won't work.
 
     images = tf.reshape(images, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 3))
-    labels = tf.reshape(labels, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 1))    
+    labels = tf.reshape(labels, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 1))
 
     images = tf.image.resize(images, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
     labels = tf.image.resize(labels, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
