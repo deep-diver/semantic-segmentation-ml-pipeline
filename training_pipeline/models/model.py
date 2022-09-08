@@ -6,8 +6,10 @@ from tensorflow.keras.optimizers import Adam
 from tfx.components.trainer.fn_args_utils import FnArgs
 
 _CONCRETE_INPUT = "pixel_values"
-_RAW_IMG_SIZE = 512
+_RAW_IMG_SIZE = 256
 _INPUT_IMG_SIZE = 128
+_TRAIN_LENGTH = 800
+_EVAL_LENGTH = 200
 _TRAIN_BATCH_SIZE = 64
 _EVAL_BATCH_SIZE = 64
 _EPOCHS = 2
@@ -77,6 +79,8 @@ def _parse_tfr(proto):
 
     image = tf.io.parse_tensor(rec["image"], tf.float32)
     label = tf.io.parse_tensor(rec["label"], tf.float32)
+
+    label = label + 1
 
     return {"pixel_values": image, "labels": label}
 
@@ -280,7 +284,9 @@ def run_fn(fn_args: FnArgs):
 
     model.fit(
         train_dataset,
+        steps_per_epoch=_TRAIN_LENGTH // _TRAIN_BATCH_SIZE,
         validation_data=eval_dataset,
+        validation_steps=_EVAL_LENGTH // _EVAL_BATCH_SIZE,
         epochs=_EPOCHS,
     )
 
