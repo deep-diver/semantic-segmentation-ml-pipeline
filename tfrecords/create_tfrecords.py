@@ -26,7 +26,7 @@ import tensorflow as tf
 import tqdm
 from PIL import Image
 
-RESOLUTION = 512
+RESOLUTION = 256
 
 
 def load_sidewalks_dataset(args):
@@ -45,7 +45,6 @@ def normalize_img(
     image: np.ndarray, label: np.ndarray
 ) -> Tuple[tf.Tensor, tf.Tensor]:
     image = tf.cast(image, tf.float32) / 255.0
-    label -= 1
     return image, label
 
 
