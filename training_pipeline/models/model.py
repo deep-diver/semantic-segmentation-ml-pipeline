@@ -80,8 +80,6 @@ def _parse_tfr(proto):
     image = tf.io.parse_tensor(rec["image"], tf.float32)
     label = tf.io.parse_tensor(rec["label"], tf.float32)
 
-    label = label + 1
-
     return {"pixel_values": image, "labels": label}
 
 
