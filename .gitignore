@@ -1,2 +1,4 @@
 tfx_metadata/
 tfx_pipeline_output/
+__pycache__
+pipeline.json
