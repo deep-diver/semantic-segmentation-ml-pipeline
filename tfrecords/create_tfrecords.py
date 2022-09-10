@@ -41,16 +41,12 @@ def load_sidewalks_dataset(args):
     return train_ds, val_ds
 
 
-def normalize_img(
-    image: np.ndarray, label: np.ndarray
-) -> Tuple[tf.Tensor, tf.Tensor]:
+def normalize_img(image: np.ndarray, label: np.ndarray) -> Tuple[tf.Tensor, tf.Tensor]:
     image = tf.cast(image, tf.float32) / 255.0
     return image, label
 
 
-def resize_img(
-    image: tf.Tensor, label: tf.Tensor
-) -> Tuple[tf.Tensor, tf.Tensor]:
+def resize_img(image: tf.Tensor, label: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     image = tf.image.resize(image, (RESOLUTION, RESOLUTION))
     label = tf.image.resize(label[..., None], (RESOLUTION, RESOLUTION))
     label = tf.squeeze(label, -1)
@@ -105,11 +101,7 @@ def write_tfrecords(root_dir, dataset, split, batch_size):
                 label = temp_ds["label"][i]
                 example = create_tfrecord(image, label)
                 out_file.write(example)
-            print(
-                "Wrote file {} containing {} records".format(
-                    filename, shard_size
-                )
-            )
+            print("Wrote file {} containing {} records".format(filename, shard_size))
 
 
 def main(args):

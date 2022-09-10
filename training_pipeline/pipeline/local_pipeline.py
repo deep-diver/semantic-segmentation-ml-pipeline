@@ -9,12 +9,7 @@ import absl
 import tensorflow_model_analysis as tfma
 from tfx.components import ImportExampleGen
 from tfx.components import Trainer
-from tfx.extensions.google_cloud_ai_platform.trainer.component import (
-    Trainer as VertexTrainer,
-)
-from tfx.extensions.google_cloud_ai_platform.pusher.component import (
-    Pusher as VertexPusher,
-)
+from tfx.components import Pusher
 from tfx.orchestration import pipeline
 from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
@@ -49,6 +44,17 @@ def create_pipeline(
         eval_args=eval_args,
     )
     components.append(trainer)
+
+    pusher_args = {
+        "model": trainer.outputs["model"],
+        "push_destination": tfx.proto.PushDestination(
+            filesystem=tfx.proto.PushDestination.Filesystem(
+                base_directory=serving_model_dir
+            )
+        ),
+    }
+    pusher = Pusher(**pusher_args)  # pylint: disable=unused-variable
+    components.append(pusher)
 
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
