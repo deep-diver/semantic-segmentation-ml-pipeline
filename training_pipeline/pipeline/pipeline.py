@@ -53,6 +53,13 @@ def create_pipeline(
     trainer = VertexTrainer(**trainer_args)
     components.append(trainer)
 
+    pusher_args = {
+        "model": trainer.outputs["model"],
+        "custom_config": ai_platform_serving_args,
+    }
+    pusher = VertexPusher(**pusher_args)  # pylint: disable=unused-variable
+    components.append(pusher)
+
     return pipeline.Pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
