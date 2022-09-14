@@ -28,6 +28,7 @@ def run():
             eval_args=trainer_pb2.EvalArgs(num_steps=configs.EVAL_NUM_STEPS),
             ai_platform_training_args=configs.GCP_AI_PLATFORM_TRAINING_ARGS,
             ai_platform_serving_args=configs.GCP_AI_PLATFORM_SERVING_ARGS,
+            example_gen_beam_args=configs.EXAMPLE_GEN_BEAM_ARGS,
             # hf_model_release_args=configs.HF_MODEL_RELEASE_ARGS,
             # hf_space_release_args=configs.HF_SPACE_RELEASE_ARGS,
         )
