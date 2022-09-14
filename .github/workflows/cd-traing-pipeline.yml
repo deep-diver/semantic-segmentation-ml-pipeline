@@ -75,13 +75,6 @@ jobs:
         mv pipeline/configs_tmp.py pipeline/configs.py
         cat pipeline/configs.py
 
-    - name: 'Compile TFX Training Pipeline'
-      working-directory: 'training_pipeline'
-      run: |
-        tfx pipeline compile \
-          --pipeline-path kubeflow_runner.py \
-          --engine vertex
-          
     - name: 'Create TFX Training Pipeline'
       working-directory: 'training_pipeline'
       run: |
@@ -89,6 +82,13 @@ jobs:
           --pipeline-path kubeflow_runner.py \
           --engine vertex \
           --build-image
+
+    - name: 'Compile TFX Training Pipeline'
+      working-directory: 'training_pipeline'
+      run: |
+        tfx pipeline compile \
+          --pipeline-path kubeflow_runner.py \
+          --engine vertex
           
     - name: 'Run TFX Training Pipeline'
       working-directory: 'training_pipeline'
