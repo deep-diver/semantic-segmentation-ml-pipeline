@@ -38,7 +38,7 @@ jobs:
     - name: 'Install cpp Protocol Buffer'
       run: |
         export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
-        sudo pip install --upgrade --force-reinstall protobuf==3.14.0
+        sudo pip install --upgrade --force-reinstall protobuf==3.17.3
     
     - name: 'Replace GCP Project Strings'
       id: prepare-step
