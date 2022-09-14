@@ -29,7 +29,7 @@ jobs:
     
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.8'
+        python-version: '3.9'
         
     - name: 'Install required Python packages'
       run: |
@@ -38,7 +38,7 @@ jobs:
     - name: 'Install cpp Protocol Buffer'
       run: |
         export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
-        sudo pip install --upgrade --force-reinstall protobuf
+        sudo pip install --upgrade --force-reinstall protobuf==3.14.0
     
     - name: 'Replace GCP Project Strings'
       id: prepare-step

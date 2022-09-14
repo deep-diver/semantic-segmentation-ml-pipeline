@@ -30,8 +30,8 @@ def create_pipeline(
     ai_platform_training_args: Optional[Dict[Text, Text]] = None,
     ai_platform_serving_args: Optional[Dict[Text, Any]] = None,
     example_gen_beam_args: Optional[List] = None,
-    hf_model_release_args: Optional[Dict[Text, Any]] = None,
-    hf_space_release_args: Optional[Dict[Text, Any]] = None,
+    # hf_model_release_args: Optional[Dict[Text, Any]] = None,
+    # hf_space_release_args: Optional[Dict[Text, Any]] = None,
 ) -> tfx.dsl.Pipeline:
     components = []
 
