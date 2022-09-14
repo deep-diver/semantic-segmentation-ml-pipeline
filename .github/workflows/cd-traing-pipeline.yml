@@ -34,6 +34,11 @@ jobs:
     - name: 'Install required Python packages'
       run: |
         pip install -r requirements.txt
+
+    - name: 'Install cpp Protocol Buffer'
+      run: |
+        export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
+        sudo pip install --upgrade --force-reinstall protobuf
     
     - name: 'Replace GCP Project Strings'
       id: prepare-step
