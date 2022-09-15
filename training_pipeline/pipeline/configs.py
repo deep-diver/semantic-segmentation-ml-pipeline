@@ -27,8 +27,8 @@ PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 DATA_PATH = "gs://sidewalks-tfx-fullres"
 
 DATAFLOW_SERVICE_ACCOUNT = "csp-gde-dataflow@gcp-ml-172005.iam.gserviceaccount.com"
-DATAFLOW_MACHINE_TYPE = "n1-standard-1"
-DATAFLOW_MAX_WORKERS = 1
+DATAFLOW_MACHINE_TYPE = "n1-standard-4"
+DATAFLOW_MAX_WORKERS = 4
 DATAFLOW_DISK_SIZE_GB = 100
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"
