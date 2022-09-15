@@ -46,6 +46,7 @@ EVAL_NUM_STEPS = 4
 
 EXAMPLE_GEN_BEAM_ARGS = [
     "--runner=DataflowRunner",
+    "--project=" + GOOGLE_CLOUD_PROJECT,
     "--region=" + GOOGLE_CLOUD_REGION,
     "--service_account_email=" + DATAFLOW_SERVICE_ACCOUNT,
     "--machine_type=" + DATAFLOW_MACHINE_TYPE,
