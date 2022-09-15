@@ -84,7 +84,7 @@ def _parse_tfr(proto):
     image = tf.reshape(tf.sparse.to_dense(rec["image"]), image_shape)
     label_shape = tf.sparse.to_dense(rec["label_shape"])
     label = tf.reshape(tf.sparse.to_dense(rec["label"]), label_shape)
-    return {"pixel_values": image, "label": label}
+    return {"pixel_values": image, "labels": label}
 
 
 def _preprocess(example_batch):

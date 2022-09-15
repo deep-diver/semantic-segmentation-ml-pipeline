@@ -66,6 +66,6 @@ def create_pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
         components=components,
-        enable_cache=False,
+        enable_cache=True,
         metadata_connection_config=metadata_connection_config,
     )
