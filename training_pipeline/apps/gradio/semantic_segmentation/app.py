@@ -1,14 +1,10 @@
-import os
-
 import gradio as gr
 import numpy as np
 import tensorflow as tf
 from huggingface_hub import from_pretrained_keras
 from PIL import Image
 
-MODEL_REPO_ID = os.environ("MODEL_REPO_ID")
-MODEL_VERSION = os.environ("MODEL_VERSION")
-MODEL_CKPT = f"{MODEL_REPO_ID}@${MODEL_VERSION}"
+MODEL_CKPT = "$MODEL_REPO_ID@$MODEL_VERSION"
 MODEL = from_pretrained_keras(MODEL_CKPT)
 
 
