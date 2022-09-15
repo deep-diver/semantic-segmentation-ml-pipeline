@@ -24,7 +24,7 @@ PIPELINE_IMAGE = f"gcr.io/{GOOGLE_CLOUD_PROJECT}/{PIPELINE_NAME}"
 OUTPUT_DIR = os.path.join("gs://", GCS_BUCKET_NAME)
 PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 # DATA_PATH = "gs://sidewalks-tfx-hf/sidewalks-tfrecords/"
-DATA_PATH = "gs://sidewalks-tfx-fullres"
+DATA_PATH = "gs://sidewalks-tfx-fullres/sidewalks-tfrecords/"
 
 DATAFLOW_SERVICE_ACCOUNT = "csp-gde-dataflow@gcp-ml-172005.iam.gserviceaccount.com"
 DATAFLOW_MACHINE_TYPE = "n1-standard-4"
