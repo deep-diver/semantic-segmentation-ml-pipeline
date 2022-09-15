@@ -72,7 +72,7 @@ def _model_exporter(model: tf.keras.Model):
 """
 
 
-def parse_tfr(proto):
+def _parse_tfr(proto):
     feature_description = {
         "image": tf.io.VarLenFeature(tf.float32),
         "image_shape": tf.io.VarLenFeature(tf.int64),
