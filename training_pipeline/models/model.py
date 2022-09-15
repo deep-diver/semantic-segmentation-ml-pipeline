@@ -7,6 +7,8 @@ from tfx.components.trainer.fn_args_utils import FnArgs
 
 _CONCRETE_INPUT = "pixel_values"
 _RAW_IMG_SIZE = 256
+_RAW_IMG_HEIGHT = 1080
+_RAW_IMG_WIDTH = 1920
 _INPUT_IMG_SIZE = 128
 _TRAIN_LENGTH = 800
 _EVAL_LENGTH = 200
@@ -85,12 +87,15 @@ def _parse_tfr(proto):
 
 def _preprocess(example_batch):
     images = example_batch["pixel_values"]
+    images = tf.transpose(
+        images, perm=[0, 1, 2, 3]
+    )  # TF can evaluation the shapes (batch_size,  num_channels, height, width)
     labels = tf.expand_dims(
         example_batch["labels"], -1
     )  # Adds extra dimension, otherwise tf.image.resize won't work.
-
-    images = tf.reshape(images, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 3))
-    labels = tf.reshape(labels, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 1))
+    labels = tf.transpose(
+        labels, perm=[0, 1, 2, 3]
+    )  # So, that TF can evaluation the shapes.
 
     images = tf.image.resize(images, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
     labels = tf.image.resize(labels, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
