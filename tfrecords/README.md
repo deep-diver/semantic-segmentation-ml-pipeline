@@ -1,0 +1,2 @@
+* `create_tfrecords.py` creates TFRecords with a reduced spatial size so that we don't need to use Dataflow within a Vertex AI pipeline. 
+* `create_tfrecords_fullres.py` creates TFRecords using the original spatial size. 
