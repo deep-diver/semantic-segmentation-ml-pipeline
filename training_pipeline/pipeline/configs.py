@@ -64,8 +64,8 @@ GCP_AI_PLATFORM_TRAINING_ARGS = {
         "worker_pool_specs": [
             {
                 "machine_spec": {
-                    "machine_type": "n1-standard-4",
-                    "accelerator_type": "NVIDIA_TESLA_K80",
+                    "machine_type": "n1-standard-8",
+                    "accelerator_type": "NVIDIA_TESLA_V100",
                     "accelerator_count": 1,
                 },
                 "replica_count": 1,

@@ -43,7 +43,7 @@ def run():
         local_pipeline.create_pipeline(
             pipeline_name=configs.PIPELINE_NAME,
             pipeline_root=PIPELINE_ROOT,
-            data_path=DATA_PATH,
+            data_path=configs.DATA_PATH,
             modules={
                 "training_fn": "models.model.run_fn",
             },
