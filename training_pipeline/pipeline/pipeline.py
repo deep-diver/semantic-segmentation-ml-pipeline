@@ -42,7 +42,8 @@ def create_pipeline(
         ]
     )
     example_gen = ImportExampleGen(input_base=data_path, input_config=input_config)
-    example_gen.with_beam_pipeline_args(example_gen_beam_args)
+    if example_gen_beam_args is not None:
+        example_gen.with_beam_pipeline_args(example_gen_beam_args)
     components.append(example_gen)
 
     trainer_args = {

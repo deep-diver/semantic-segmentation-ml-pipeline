@@ -15,6 +15,10 @@ on:
         description: 'TFX Pipeline Name to Trigger'
         required: true
         default: 'segformer-training-pipeline'
+      fullResolutionData:
+        description: 'use the full resolution data, dataflow'
+        required: true
+        default: 'false'
     
 jobs:
   cd:
@@ -51,6 +55,11 @@ jobs:
       run: |
         sed -i 's/gcp-ml-172005/${{ github.event.inputs.gcpProject }}/g' pipeline/configs.py
     
+    - name: 'Set Environment Variable'
+      working-directory: 'training_pipeline'
+      run: | 
+        export FULL_RES_DATA=${{ github.event.inputs.fullResolutionData }}
+
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v0'
       env:
