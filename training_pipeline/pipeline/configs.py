@@ -63,7 +63,7 @@ GCP_AI_PLATFORM_TRAINING_ARGS = {
     "use_gpu": True,
 }
 
-fullres_data = os.environ.get("FULL_RES_DATA", "False")
+fullres_data = os.environ.get("FULL_RES_DATA", "false")
 
 if fullres_data.lower() is not "false":
     DATA_PATH = "gs://sidewalks-tfx-fullres/sidewalks-tfrecords/"

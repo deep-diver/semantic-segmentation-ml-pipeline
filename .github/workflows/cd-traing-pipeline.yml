@@ -54,6 +54,10 @@ jobs:
       working-directory: 'training_pipeline'
       run: |
         sed -i 's/gcp-ml-172005/${{ github.event.inputs.gcpProject }}/g' pipeline/configs.py
+    
+    - name: 'Set Environment Variable'
+      run: | 
+        echo "FULL_RES_DATA=${{ github.event.inputs.fullResolutionData }}" >> $GITHUB_ENV
 
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v0'
@@ -81,8 +85,6 @@ jobs:
 
     - name: 'Create TFX Training Pipeline'
       working-directory: 'training_pipeline'
-      env:
-        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}
       run: |
         tfx pipeline create \
           --pipeline-path kubeflow_runner.py \
@@ -91,8 +93,6 @@ jobs:
 
     - name: 'Compile TFX Training Pipeline'
       working-directory: 'training_pipeline'
-      env:
-        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
       run: |
         tfx pipeline compile \
           --pipeline-path kubeflow_runner.py \
@@ -100,8 +100,6 @@ jobs:
           
     - name: 'Run TFX Training Pipeline'
       working-directory: 'training_pipeline'
-      env:
-        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
       run: |
           tfx run create \
             --engine vertex \
