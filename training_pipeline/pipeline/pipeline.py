@@ -29,8 +29,9 @@ def create_pipeline(
     metadata_connection_config: Optional[metadata_store_pb2.ConnectionConfig] = None,
     ai_platform_training_args: Optional[Dict[Text, Text]] = None,
     ai_platform_serving_args: Optional[Dict[Text, Any]] = None,
-    hf_model_release_args: Optional[Dict[Text, Any]] = None,
-    hf_space_release_args: Optional[Dict[Text, Any]] = None,
+    example_gen_beam_args: Optional[List] = None,
+    # hf_model_release_args: Optional[Dict[Text, Any]] = None,
+    # hf_space_release_args: Optional[Dict[Text, Any]] = None,
 ) -> tfx.dsl.Pipeline:
     components = []
 
@@ -41,6 +42,8 @@ def create_pipeline(
         ]
     )
     example_gen = ImportExampleGen(input_base=data_path, input_config=input_config)
+    if example_gen_beam_args is not None:
+        example_gen.with_beam_pipeline_args(example_gen_beam_args)
     components.append(example_gen)
 
     trainer_args = {
@@ -64,6 +67,6 @@ def create_pipeline(
         pipeline_name=pipeline_name,
         pipeline_root=pipeline_root,
         components=components,
-        enable_cache=False,
+        enable_cache=True,
         metadata_connection_config=metadata_connection_config,
     )

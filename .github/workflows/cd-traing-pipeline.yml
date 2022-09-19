@@ -15,6 +15,10 @@ on:
         description: 'TFX Pipeline Name to Trigger'
         required: true
         default: 'segformer-training-pipeline'
+      fullResolutionData:
+        description: 'use the full resolution data, dataflow'
+        required: true
+        default: 'false'
     
 jobs:
   cd:
@@ -29,11 +33,12 @@ jobs:
     
     - uses: actions/setup-python@v4
       with:
-        python-version: '3.8'
+        python-version: '3.9'
         
     - name: 'Install required Python packages'
       run: |
         pip install -r requirements.txt
+
     
     - name: 'Replace GCP Project Strings'
       id: prepare-step
@@ -70,24 +75,33 @@ jobs:
         mv pipeline/configs_tmp.py pipeline/configs.py
         cat pipeline/configs.py
 
-    - name: 'Compile TFX Training Pipeline'
-      working-directory: 'training_pipeline'
-      run: |
-        tfx pipeline compile \
-          --pipeline-path kubeflow_runner.py \
-          --engine vertex
-          
     - name: 'Create TFX Training Pipeline'
       working-directory: 'training_pipeline'
+      env:
+        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}
       run: |
+        FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
         tfx pipeline create \
           --pipeline-path kubeflow_runner.py \
           --engine vertex \
           --build-image
+
+    - name: 'Compile TFX Training Pipeline'
+      working-directory: 'training_pipeline'
+      env:
+        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
+      run: |
+        FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
+        tfx pipeline compile \
+          --pipeline-path kubeflow_runner.py \
+          --engine vertex
           
     - name: 'Run TFX Training Pipeline'
       working-directory: 'training_pipeline'
+      env:
+        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
       run: |
+          FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
           tfx run create \
             --engine vertex \
             --pipeline-name ${{ github.event.inputs.pipelineName }} \
