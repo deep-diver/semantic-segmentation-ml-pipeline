@@ -65,7 +65,7 @@ GCP_AI_PLATFORM_TRAINING_ARGS = {
 
 fullres_data = os.environ.get("FULL_RES_DATA", "false")
 
-if fullres_data.lower() is not "false":
+if fullres_data.lower() == "true":
     DATA_PATH = "gs://sidewalks-tfx-fullres/sidewalks-tfrecords/"
 
     DATAFLOW_SERVICE_ACCOUNT = "csp-gde-dataflow@gcp-ml-172005.iam.gserviceaccount.com"
