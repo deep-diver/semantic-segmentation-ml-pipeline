@@ -7,6 +7,8 @@ from tfx.components.trainer.fn_args_utils import FnArgs
 
 _CONCRETE_INPUT = "pixel_values"
 _RAW_IMG_SIZE = 256
+_RAW_IMG_HEIGHT = 1080
+_RAW_IMG_WIDTH = 1920
 _INPUT_IMG_SIZE = 128
 _TRAIN_LENGTH = 800
 _EVAL_LENGTH = 200
@@ -72,25 +74,30 @@ def _model_exporter(model: tf.keras.Model):
 
 def _parse_tfr(proto):
     feature_description = {
-        "image": tf.io.FixedLenFeature([], tf.string),
-        "label": tf.io.FixedLenFeature([], tf.string),
+        "image": tf.io.VarLenFeature(tf.float32),
+        "image_shape": tf.io.VarLenFeature(tf.int64),
+        "label": tf.io.VarLenFeature(tf.float32),
+        "label_shape": tf.io.VarLenFeature(tf.int64),
     }
     rec = tf.io.parse_single_example(proto, feature_description)
-
-    image = tf.io.parse_tensor(rec["image"], tf.float32)
-    label = tf.io.parse_tensor(rec["label"], tf.float32)
-
+    image_shape = tf.sparse.to_dense(rec["image_shape"])
+    image = tf.reshape(tf.sparse.to_dense(rec["image"]), image_shape)
+    label_shape = tf.sparse.to_dense(rec["label_shape"])
+    label = tf.reshape(tf.sparse.to_dense(rec["label"]), label_shape)
     return {"pixel_values": image, "labels": label}
 
 
 def _preprocess(example_batch):
     images = example_batch["pixel_values"]
+    images = tf.transpose(
+        images, perm=[0, 1, 2, 3]
+    )  # TF can evaluation the shapes (batch_size,  num_channels, height, width)
     labels = tf.expand_dims(
         example_batch["labels"], -1
     )  # Adds extra dimension, otherwise tf.image.resize won't work.
-
-    images = tf.reshape(images, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 3))
-    labels = tf.reshape(labels, (-1, _RAW_IMG_SIZE, _RAW_IMG_SIZE, 1))
+    labels = tf.transpose(
+        labels, perm=[0, 1, 2, 3]
+    )  # So, that TF can evaluation the shapes.
 
     images = tf.image.resize(images, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
     labels = tf.image.resize(labels, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
