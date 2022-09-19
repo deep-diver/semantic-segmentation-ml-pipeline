@@ -6,8 +6,6 @@ from tensorflow.keras.optimizers import Adam
 from tfx.components.trainer.fn_args_utils import FnArgs
 
 _CONCRETE_INPUT = "pixel_values"
-_RAW_IMG_HEIGHT = 1080
-_RAW_IMG_WIDTH = 1920
 _INPUT_IMG_SIZE = 128
 _TRAIN_LENGTH = 800
 _EVAL_LENGTH = 200
