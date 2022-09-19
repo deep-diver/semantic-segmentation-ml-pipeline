@@ -84,7 +84,7 @@ jobs:
       env:
         FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}
       run: |
-        FULL_RES_DATA=$FULL_RES_DATA \
+        FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
         tfx pipeline create \
           --pipeline-path kubeflow_runner.py \
           --engine vertex \
@@ -95,7 +95,7 @@ jobs:
       env:
         FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
       run: |
-        FULL_RES_DATA=$FULL_RES_DATA \
+        FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
         tfx pipeline compile \
           --pipeline-path kubeflow_runner.py \
           --engine vertex
@@ -105,7 +105,7 @@ jobs:
       env:
         FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
       run: |
-          FULL_RES_DATA=$FULL_RES_DATA \
+          FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
           tfx run create \
             --engine vertex \
             --pipeline-name ${{ github.event.inputs.pipelineName }} \
