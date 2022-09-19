@@ -143,7 +143,7 @@ def _input_fn(
 
 def _build_model(num_labels: int) -> tf.keras.Model:
     base_model = tf.keras.applications.MobileNetV2(
-        input_shape=[128, 128, 3], include_top=False
+        input_shape=[_INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], include_top=False
     )
 
     # Use the activations of these layers
