@@ -40,8 +40,12 @@ def preprocessing_fn(inputs):
 
     features = tf.map_fn(preprocess, inputs)
 
-    features[_IMAGE_KEY] = tf.image.resize(features[_IMAGE_KEY], [_INPUT_IMG_SIZE, _INPUT_IMG_SIZE])
-    features[_LABEL_KEY] = tf.image.resize(features[_LABEL_KEY], [_INPUT_IMG_SIZE, _INPUT_IMG_SIZE])
+    features[_IMAGE_KEY] = tf.image.resize(
+        features[_IMAGE_KEY], [_INPUT_IMG_SIZE, _INPUT_IMG_SIZE]
+    )
+    features[_LABEL_KEY] = tf.image.resize(
+        features[_LABEL_KEY], [_INPUT_IMG_SIZE, _INPUT_IMG_SIZE]
+    )
 
     image_features = mobilenet_v2.preprocess_input(features[_IMAGE_KEY])
 

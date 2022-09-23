@@ -53,25 +53,25 @@ def create_pipeline(
     statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
     components.append(statistics_gen)
 
-    schema_gen = SchemaGen(statistics=statistics_gen.outputs['statistics'])
+    schema_gen = SchemaGen(statistics=statistics_gen.outputs["statistics"])
     components.append(schema_gen)
 
     transform = Transform(
         examples=example_gen.outputs["examples"],
         schema=schema_gen.outputs["schema"],
-        preprocessing_fn=modules['preprocessing_fn'],
+        preprocessing_fn=modules["preprocessing_fn"],
     )
     if transform_beam_args is not None:
         transform.with_beam_pipeline_args(transform_beam_args)
     components.append(transform)
 
     trainer_args = {
-        "run_fn": modules['training_fn'],
+        "run_fn": modules["training_fn"],
         "transformed_examples": transform.outputs["transformed_examples"],
         "transform_graph": transform.outputs["transform_graph"],
         "schema": schema_gen.outputs["schema"],
         "train_args": train_args,
-        "eval_args": eval_args,        
+        "eval_args": eval_args,
         "custom_config": ai_platform_training_args,
     }
     trainer = VertexTrainer(**trainer_args)

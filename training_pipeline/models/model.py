@@ -20,11 +20,14 @@ _LR = 0.00006
 _IMAGE_KEY = "image"
 _LABEL_KEY = "label"
 
+
 def INFO(text: str):
     absl.logging.info(text)
 
+
 def _transformed_name(key: str) -> str:
     return key + "_xf"
+
 
 """
     _serving_preprocess, _serving_preprocess_fn, and 
@@ -51,7 +54,11 @@ def _serving_preprocess_fn(string_input):
 
 def _model_exporter(model: tf.keras.Model):
     m_call = tf.function(model.call).get_concrete_function(
-        tf.TensorSpec(shape=[None, _INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], dtype=tf.float32, name=_CONCRETE_INPUT)
+        tf.TensorSpec(
+            shape=[None, _INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3],
+            dtype=tf.float32,
+            name=_CONCRETE_INPUT,
+        )
     )
 
     @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
@@ -63,11 +70,13 @@ def _model_exporter(model: tf.keras.Model):
 
     return serving_fn
 
+
 """
     _input_fn reads TFRecord files passed from the upstream 
     TFX component, Transform. Assume the dataset is already 
     transformed appropriately. 
 """
+
 
 def _input_fn(
     file_pattern: List[str],
@@ -130,7 +139,11 @@ def _build_model(num_labels) -> tf.keras.Model:
 
     # This is the last layer of the model
     last = tf.keras.layers.Conv2DTranspose(
-        filters=num_labels, kernel_size=3, strides=2, padding="same", name=_transformed_name(_LABEL_KEY)
+        filters=num_labels,
+        kernel_size=3,
+        strides=2,
+        padding="same",
+        name=_transformed_name(_LABEL_KEY),
     )  # 64x64 -> 128x128
 
     x = last(x)
@@ -230,7 +243,7 @@ def run_fn(fn_args: FnArgs):
     eval_dataset = _input_fn(
         fn_args.eval_files,
         fn_args.data_accessor,
-        tf_transform_output,        
+        tf_transform_output,
         is_train=False,
         batch_size=_EVAL_BATCH_SIZE,
     )

@@ -43,23 +43,23 @@ def create_pipeline(
     statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
     components.append(statistics_gen)
 
-    schema_gen = SchemaGen(statistics=statistics_gen.outputs['statistics'])
+    schema_gen = SchemaGen(statistics=statistics_gen.outputs["statistics"])
     components.append(schema_gen)
 
     transform = Transform(
         examples=example_gen.outputs["examples"],
         schema=schema_gen.outputs["schema"],
-        preprocessing_fn=modules['preprocessing_fn'],
+        preprocessing_fn=modules["preprocessing_fn"],
     )
     components.append(transform)
 
     trainer = Trainer(
-        run_fn=modules['training_fn'],
+        run_fn=modules["training_fn"],
         transformed_examples=transform.outputs["transformed_examples"],
         transform_graph=transform.outputs["transform_graph"],
         schema=schema_gen.outputs["schema"],
         train_args=train_args,
-        eval_args=eval_args,        
+        eval_args=eval_args,
     )
     components.append(trainer)
 
