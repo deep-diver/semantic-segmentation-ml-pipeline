@@ -97,6 +97,7 @@ if fullres_data.lower() == "true":
         "--experiments=use_runner_v2",
         "--max_num_workers=" + str(DATAFLOW_MAX_WORKERS),
         "--disk_size_gb=" + str(DATAFLOW_DISK_SIZE_GB),
+        "--worker_harness_container_image=" + PIPELINE_IMAGE,
     ]
 
     GCP_AI_PLATFORM_TRAINING_ARGS[vertex_training_const.TRAINING_ARGS_KEY][
