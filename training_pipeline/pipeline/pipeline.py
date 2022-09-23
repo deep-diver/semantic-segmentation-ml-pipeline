@@ -6,6 +6,9 @@ from ml_metadata.proto import metadata_store_pb2
 from tfx.proto import example_gen_pb2
 
 from tfx.components import ImportExampleGen
+from tfx.components import SchemaGen
+from tfx.components import StatisticsGen
+from tfx.components import Transform
 from tfx.extensions.google_cloud_ai_platform.trainer.component import (
     Trainer as VertexTrainer,
 )
@@ -30,6 +33,7 @@ def create_pipeline(
     ai_platform_training_args: Optional[Dict[Text, Text]] = None,
     ai_platform_serving_args: Optional[Dict[Text, Any]] = None,
     example_gen_beam_args: Optional[List] = None,
+    transform_beam_args: Optional[List] = None,
     # hf_model_release_args: Optional[Dict[Text, Any]] = None,
     # hf_space_release_args: Optional[Dict[Text, Any]] = None,
 ) -> tfx.dsl.Pipeline:
@@ -46,11 +50,28 @@ def create_pipeline(
         example_gen.with_beam_pipeline_args(example_gen_beam_args)
     components.append(example_gen)
 
+    statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
+    components.append(statistics_gen)
+
+    schema_gen = SchemaGen(statistics=statistics_gen.outputs['statistics'])
+    components.append(schema_gen)
+
+    transform = Transform(
+        examples=example_gen.outputs["examples"],
+        schema=schema_gen.outputs["schema"],
+        preprocessing_fn=modules['preprocessing_fn'],
+    )
+    if transform_beam_args is not None:
+        transform.with_beam_pipeline_args(transform_beam_args)
+    components.append(transform)
+
     trainer_args = {
-        "run_fn": modules["training_fn"],
-        "examples": example_gen.outputs["examples"],
+        "run_fn": modules['training_fn'],
+        "transformed_examples": transform.outputs["transformed_examples"],
+        "transform_graph": transform.outputs["transform_graph"],
+        "schema": schema_gen.outputs["schema"],
         "train_args": train_args,
-        "eval_args": eval_args,
+        "eval_args": eval_args,        
         "custom_config": ai_platform_training_args,
     }
     trainer = VertexTrainer(**trainer_args)
