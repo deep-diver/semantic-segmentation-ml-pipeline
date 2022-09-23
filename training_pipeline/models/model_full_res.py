@@ -2,8 +2,11 @@ from typing import List, Dict, Tuple
 
 import absl
 import tensorflow as tf
+import tensorflow_transform as tft
 from tensorflow.keras.optimizers import Adam
+from tfx_bsl.tfxio import dataset_options
 from tfx.components.trainer.fn_args_utils import FnArgs
+from tfx.components.trainer.fn_args_utils import DataAccessor
 
 _CONCRETE_INPUT = "pixel_values"
 _INPUT_IMG_SIZE = 128
@@ -14,10 +17,14 @@ _EVAL_BATCH_SIZE = 64
 _EPOCHS = 2
 _LR = 0.00006
 
+_IMAGE_KEY = "image"
+_LABEL_KEY = "label"
 
 def INFO(text: str):
     absl.logging.info(text)
 
+def _transformed_name(key: str) -> str:
+    return key + "_xf"
 
 """
     _serving_preprocess, _serving_preprocess_fn, and 
@@ -60,77 +67,28 @@ def _model_exporter(model: tf.keras.Model):
 
     return serving_fn
 
-
-"""
-    _parse_tfr function is defined to parse items from TFRecord
-    files within tf.data pipeline, and _preprocess function will
-    be attatched to the tf.data pipeline to resize input images 
-    before the model
-"""
-
-
-def _parse_tfr(proto):
-    feature_description = {
-        "image": tf.io.VarLenFeature(tf.float32),
-        "image_shape": tf.io.VarLenFeature(tf.int64),
-        "label": tf.io.VarLenFeature(tf.float32),
-        "label_shape": tf.io.VarLenFeature(tf.int64),
-    }
-    rec = tf.io.parse_single_example(proto, feature_description)
-    image_shape = tf.sparse.to_dense(rec["image_shape"])
-    image = tf.reshape(tf.sparse.to_dense(rec["image"]), image_shape)
-    label_shape = tf.sparse.to_dense(rec["label_shape"])
-    label = tf.reshape(tf.sparse.to_dense(rec["label"]), label_shape)
-    return {"pixel_values": image, "labels": label}
-
-
-def _preprocess(example_batch):
-    images = example_batch["pixel_values"]
-    images = tf.transpose(
-        images, perm=[0, 1, 2, 3]
-    )  # TF can evaluation the shapes (batch_size,  num_channels, height, width)
-    labels = tf.expand_dims(
-        example_batch["labels"], -1
-    )  # Adds extra dimension, otherwise tf.image.resize won't work.
-    labels = tf.transpose(
-        labels, perm=[0, 1, 2, 3]
-    )  # So, that TF can evaluation the shapes.
-
-    images = tf.image.resize(images, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
-    labels = tf.image.resize(labels, (_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
-
-    labels = tf.squeeze(labels, -1)
-
-    return images, labels
-
-
 """
     _input_fn reads TFRecord files passed from the upstream 
-    TFX components such as ImportExampleGen. It calls _parse_tfr 
-    to parse each entry of the TFRecord files, then _preprocess
-    function is attached to resize the input image
+    TFX component, Transform. Assume the dataset is already 
+    transformed appropriately. 
 """
 
 
 def _input_fn(
     file_pattern: List[str],
-    batch_size: int = 32,
+    data_accessor: DataAccessor,
+    tf_transform_output: tft.TFTransformOutput,
     is_train: bool = False,
+    batch_size: int = 200,
 ) -> tf.data.Dataset:
-    INFO(f"Reading data from: {file_pattern}")
+    dataset = data_accessor.tf_dataset_factory(
+        file_pattern,
+        dataset_options.TensorFlowDatasetOptions(
+            batch_size=batch_size, label_key=_transformed_name(_LABEL_KEY)
+        ),
+        tf_transform_output.transformed_metadata.schema,
+    )
 
-    dataset = tf.data.TFRecordDataset(
-        tf.io.gfile.glob(file_pattern[0] + ".gz"),
-        num_parallel_reads=tf.data.AUTOTUNE,
-        compression_type="GZIP",
-    ).map(_parse_tfr, num_parallel_calls=tf.data.AUTOTUNE)
-
-    if is_train:
-        dataset = dataset.shuffle(batch_size * 2)
-
-    dataset = dataset.batch(batch_size)
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)
-    dataset = dataset.map(_preprocess)
     return dataset
 
 
@@ -141,9 +99,9 @@ def _input_fn(
 """
 
 
-def _build_model(num_labels: int) -> tf.keras.Model:
+def _build_model(num_labels) -> tf.keras.Model:
     base_model = tf.keras.applications.MobileNetV2(
-        input_shape=[_INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], include_top=False
+        input_shape=[128, 128, 3], include_top=False
     )
 
     # Use the activations of these layers
@@ -167,7 +125,9 @@ def _build_model(num_labels: int) -> tf.keras.Model:
         upsample(64, 3),  # 32x32 -> 64x64
     ]
 
-    inputs = tf.keras.layers.Input(shape=[128, 128, 3])
+    inputs = tf.keras.layers.Input(
+        shape=[128, 128, 3], name=_transformed_name(_IMAGE_KEY)
+    )
 
     # Downsampling through the model
     skips = down_stack(inputs)
@@ -182,7 +142,7 @@ def _build_model(num_labels: int) -> tf.keras.Model:
 
     # This is the last layer of the model
     last = tf.keras.layers.Conv2DTranspose(
-        filters=num_labels, kernel_size=3, strides=2, padding="same", name="labels"
+        filters=num_labels, kernel_size=3, strides=2, padding="same", name=_transformed_name(_LABEL_KEY)
     )  # 64x64 -> 128x128
 
     x = last(x)
@@ -191,7 +151,7 @@ def _build_model(num_labels: int) -> tf.keras.Model:
     model.compile(
         optimizer=Adam(learning_rate=_LR),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=["accuracy"],
+        metrics=["sparse_categorical_accuracy"],
     )
     return model
 
@@ -269,14 +229,20 @@ def upsample(filters, size, norm_type="batchnorm", apply_dropout=False):
 
 
 def run_fn(fn_args: FnArgs):
+    tf_transform_output = tft.TFTransformOutput(fn_args.transform_output)
+
     train_dataset = _input_fn(
         fn_args.train_files,
+        fn_args.data_accessor,
+        tf_transform_output,
         is_train=True,
         batch_size=_TRAIN_BATCH_SIZE,
     )
 
     eval_dataset = _input_fn(
         fn_args.eval_files,
+        fn_args.data_accessor,
+        tf_transform_output,        
         is_train=False,
         batch_size=_EVAL_BATCH_SIZE,
     )
@@ -288,7 +254,7 @@ def run_fn(fn_args: FnArgs):
         train_dataset,
         steps_per_epoch=_TRAIN_LENGTH // _TRAIN_BATCH_SIZE,
         validation_data=eval_dataset,
-        validation_steps=_EVAL_LENGTH // _EVAL_BATCH_SIZE,
+        validation_steps=_EVAL_LENGTH // _TRAIN_BATCH_SIZE,
         epochs=_EPOCHS,
     )
 
