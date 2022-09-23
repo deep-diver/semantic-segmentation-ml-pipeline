@@ -69,6 +69,7 @@ if fullres_data.lower() == "true":
     DATA_PATH = "gs://sidewalks-tfx-fullres/sidewalks-tfrecords/"
 
     TRAINING_FN = "models.model_full_res.run_fn"
+    PREPROCESSING_FN = "models.preprocessing_full_res.preprocessing_fn"
 
     DATAFLOW_SERVICE_ACCOUNT = "csp-gde-dataflow@gcp-ml-172005.iam.gserviceaccount.com"
     DATAFLOW_MACHINE_TYPE = "n1-standard-4"
