@@ -40,6 +40,7 @@ TRAIN_NUM_STEPS = 160
 EVAL_NUM_STEPS = 4
 
 EXAMPLE_GEN_BEAM_ARGS = None
+TRANSFORM_BEAM_ARGS = None
 
 GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
@@ -77,6 +78,17 @@ if fullres_data.lower() == "true":
     DATAFLOW_DISK_SIZE_GB = 100
 
     EXAMPLE_GEN_BEAM_ARGS = [
+        "--runner=DataflowRunner",
+        "--project=" + GOOGLE_CLOUD_PROJECT,
+        "--region=" + GOOGLE_CLOUD_REGION,
+        "--service_account_email=" + DATAFLOW_SERVICE_ACCOUNT,
+        "--machine_type=" + DATAFLOW_MACHINE_TYPE,
+        "--experiments=use_runner_v2",
+        "--max_num_workers=" + str(DATAFLOW_MAX_WORKERS),
+        "--disk_size_gb=" + str(DATAFLOW_DISK_SIZE_GB),
+    ]
+
+    TRANSFORM_BEAM_ARGS = [
         "--runner=DataflowRunner",
         "--project=" + GOOGLE_CLOUD_PROJECT,
         "--region=" + GOOGLE_CLOUD_REGION,
