@@ -24,7 +24,7 @@ PIPELINE_IMAGE = f"gcr.io/{GOOGLE_CLOUD_PROJECT}/{PIPELINE_NAME}"
 OUTPUT_DIR = os.path.join("gs://", GCS_BUCKET_NAME)
 PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 
-DATA_PATH = "gs://sidewalks-tfx-hf/sidewalks-tfrecords/"
+DATA_PATH = "gs://sidewalks-tfx-lowres/sidewalks-tfrecords/"
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"
 TRAINING_FN = "models.model.run_fn"
