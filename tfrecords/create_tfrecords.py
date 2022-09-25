@@ -8,6 +8,7 @@ https://github.com/GoogleCloudPlatform/practical-ml-vision-book/blob/master/05_c
 
 Usage:
     python create_tfrecords --batch_size 16
+    python create_tfrecords --resize 256 # without --resize flag, no resizing is applied
 
 References:
 
