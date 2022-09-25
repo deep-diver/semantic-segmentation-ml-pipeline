@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.applications import mobilenet_v2
 
-_RAW_IMG_SIZE = 256
 _INPUT_IMG_SIZE = 128
 
 _IMAGE_KEY = "image"
@@ -16,8 +15,11 @@ def _transformed_name(key: str) -> str:
 
 # output should have the same keys as inputs
 def preprocess(inputs):
-    images = tf.reshape(inputs[_IMAGE_KEY], [_RAW_IMG_SIZE, _RAW_IMG_SIZE, 3])
-    labels = tf.reshape(inputs[_LABEL_KEY], [_RAW_IMG_SIZE, _RAW_IMG_SIZE, 1])
+    image_shape = inputs[_IMAGE_SHAPE_KEY]
+    label_shape = inputs[_LABEL_SHAPE_KEY]
+    
+    images = tf.reshape(inputs[_IMAGE_KEY], [image_shape[0], image_shape[1], 3])
+    labels = tf.reshape(inputs[_LABEL_KEY], [label_shape[0], label_shape[1], 1])
 
     return {
         _IMAGE_KEY: images,
