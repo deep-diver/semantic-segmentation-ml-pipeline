@@ -27,9 +27,9 @@ PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 DATA_PATH = "gs://sidewalks-tfx-lowres/sidewalks-tfrecords/"
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"
-TRAINING_FN = "models.model.run_fn"
-TUNER_FN = "models.model.tuner_fn"
-CLOUD_TUNER_FN = "models.model.tuner_fn"
+TRAINING_FN = "models.train.run_fn"
+TUNER_FN = "models.train.tuner_fn"
+CLOUD_TUNER_FN = "models.train.tuner_fn"
 
 GRADIO_APP_PATH = "apps.gradio.img_classifier"
 MODEL_HUB_REPO_PLACEHOLDER = "$MODEL_REPO_ID"
