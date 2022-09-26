@@ -182,7 +182,7 @@ def _build_model(num_labels) -> tf.keras.Model:
     model.compile(
         optimizer=Adam(learning_rate=_LR),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=["sparse_categorical_accuracy"],
+        metrics=["accuracy"],
     )
     return model
 
