@@ -40,12 +40,6 @@ def load_sidewalks_dataset(args):
 
     return train_ds, val_ds
 
-
-def normalize_img(image: np.ndarray, label: np.ndarray) -> Tuple[tf.Tensor, tf.Tensor]:
-    image = tf.cast(image, tf.float32) / 255.0
-    return image, label
-
-
 def resize_img(image: tf.Tensor, label: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     image = tf.image.resize(image, (RESOLUTION, RESOLUTION))
     label = tf.image.resize(label[..., None], (RESOLUTION, RESOLUTION))
