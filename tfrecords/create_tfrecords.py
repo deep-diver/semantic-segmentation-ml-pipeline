@@ -8,10 +8,11 @@ https://github.com/GoogleCloudPlatform/practical-ml-vision-book/blob/master/05_c
 
 Usage:
     python create_tfrecords --batch_size 16
+    python create_tfrecords --resize 256 # without --resize flag, no resizing is applied
 
 References:
 
-    * https://github.com/sayakpaul/TF-2.0-Hacks/blob/master/Cats_vs_Dogs_TFRecords.ipynb
+    * https://github.com/GoogleCloudPlatform/practical-ml-vision-book/blob/master/05_create_dataset/05_split_tfrecord.ipynb
     * https://www.tensorflow.org/tutorials/images/segmentation
 """
 
@@ -28,7 +29,6 @@ from PIL import Image
 
 RESOLUTION = 256
 
-
 def load_sidewalks_dataset(args):
     hf_dataset_identifier = "segments/sidewalk-semantic"
     ds = datasets.load_dataset(hf_dataset_identifier)
@@ -41,51 +41,56 @@ def load_sidewalks_dataset(args):
     return train_ds, val_ds
 
 
-def normalize_img(image: np.ndarray, label: np.ndarray) -> Tuple[tf.Tensor, tf.Tensor]:
-    image = tf.cast(image, tf.float32) / 255.0
-    return image, label
-
-
-def resize_img(image: tf.Tensor, label: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
-    image = tf.image.resize(image, (RESOLUTION, RESOLUTION))
-    label = tf.image.resize(label[..., None], (RESOLUTION, RESOLUTION))
+def resize_img(image: tf.Tensor, label: tf.Tensor, resize: int) -> Tuple[tf.Tensor, tf.Tensor]:
+    image = tf.image.resize(image, (resize, resize))
+    label = tf.image.resize(label[..., None], (resize, resize))
     label = tf.squeeze(label, -1)
     return image, label
 
-
-def process_image(image: Image, label: Image) -> Tuple[tf.Tensor, tf.Tensor]:
+def process_image(image: Image, label: Image, resize: int) -> Tuple[tf.Tensor, tf.Tensor]:
     image = np.array(image)
     label = np.array(label)
 
     image = tf.convert_to_tensor(image)
     label = tf.convert_to_tensor(label)
 
-    image, label = resize_img(image, label)
-    image, label = normalize_img(image, label)
+    if resize:
+        image, label = resize_img(image, label, resize)
+
     return image, label
 
 
-def _bytestring_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
+def _int64_feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
 
 
-def create_tfrecord(image: Image, label: Image):
-    image, label = process_image(image, label)
+def _float_feature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
-    image = tf.io.serialize_tensor(image)
-    label = tf.io.serialize_tensor(label)
+
+def create_tfrecord(image: Image, label: Image, resize: int):
+    image, label = process_image(image, label, resize)
+    image_dims = image.shape
+    label_dims = label.shape
+
+    image = tf.reshape(image, [-1])  # flatten to 1D array
+    label = tf.reshape(label, [-1])  # flatten to 1D array
 
     return tf.train.Example(
         features=tf.train.Features(
             feature={
-                "image": _bytestring_feature([image.numpy()]),
-                "label": _bytestring_feature([label.numpy()]),
+                "image": _float_feature(image.numpy()),
+                "image_shape": _int64_feature(
+                    [image_dims[0], image_dims[1], image_dims[2]]
+                ),
+                "label": _float_feature(label.numpy()),
+                "label_shape": _int64_feature([label_dims[0], label_dims[1]]),
             }
         )
     ).SerializeToString()
 
 
-def write_tfrecords(root_dir, dataset, split, batch_size):
+def write_tfrecords(root_dir, dataset, split, batch_size, resize):
     print(f"Preparing TFRecords for split: {split}.")
 
     for step in tqdm.tnrange(int(math.ceil(len(dataset) / batch_size))):
@@ -99,7 +104,7 @@ def write_tfrecords(root_dir, dataset, split, batch_size):
             for i in range(shard_size):
                 image = temp_ds["pixel_values"][i]
                 label = temp_ds["label"][i]
-                example = create_tfrecord(image, label)
+                example = create_tfrecord(image, label, resize)
                 out_file.write(example)
             print("Wrote file {} containing {} records".format(filename, shard_size))
 
@@ -111,8 +116,10 @@ def main(args):
     if not os.path.exists(args.root_tfrecord_dir):
         os.makedirs(args.root_tfrecord_dir, exist_ok=True)
 
-    write_tfrecords(args.root_tfrecord_dir, train_ds, "train", args.batch_size)
-    write_tfrecords(args.root_tfrecord_dir, val_ds, "val", args.batch_size)
+    print(args.resize)
+
+    write_tfrecords(args.root_tfrecord_dir, train_ds, "train", args.batch_size, args.resize)
+    write_tfrecords(args.root_tfrecord_dir, val_ds, "val", args.batch_size, args.resize)
 
 
 def parse_args():
@@ -136,6 +143,11 @@ def parse_args():
         "--batch_size",
         help="Number of samples to process in a batch before serializing a single TFRecord shard.",
         default=32,
+        type=int,
+    )
+    parser.add_argument(
+        "--resize",
+        help="Width and height size the image will be resized to. No resizing will be applied when this isn't set.",
         type=int,
     )
 
