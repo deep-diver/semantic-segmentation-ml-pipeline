@@ -1,5 +1,5 @@
 There are two scripts to create TFRecords for [sidewalk dataset](https://huggingface.co/datasets/segments/sidewalk-semantic) hosted in 🤗 Dataset Hub. They are basically same except for one thing. `create_tfrecords.py` creates TFRecords with the features encoded in numeric data type. On the other hand, `create_tfrecords_str.py` creates TFRecords with the features encoded in string data type. 
-- This is due to demonstrate how to create such dataset because string encoding is better in terms of compression.
+- This is to demonstrate how to create such a dataset because string encoding is better in terms of compression.
 - However, we use the dataset created from `create_tfrecords.py` since we couldn't find a way to extract string encoded dataset in `Transform` component yet. We will explore the solution afterwards.
 
 `create_tfrecords.py` supports some flags:
