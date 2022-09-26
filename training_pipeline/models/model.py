@@ -72,9 +72,11 @@ def _model_exporter(model: tf.keras.Model):
 
 
 """
-    _input_fn reads TFRecord files passed from the upstream 
-    TFX component, Transform. Assume the dataset is already 
-    transformed appropriately. 
+    _input_fn reads TFRecord files with the given file_pattern passed down 
+    from the upstream TFX component, Transform. The file patterns are inter
+    nally determined by Transform component, and they are automatically acce
+    ssible through fn_args.train_files and fn_args.eval_files in the run_fn 
+    function. Assume the dataset is already transformed appropriately. 
 """
 
 
