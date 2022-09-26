@@ -29,6 +29,7 @@ from PIL import Image
 
 RESOLUTION = 256
 
+
 def load_sidewalks_dataset(args):
     hf_dataset_identifier = "segments/sidewalk-semantic"
     ds = datasets.load_dataset(hf_dataset_identifier)
@@ -41,13 +42,18 @@ def load_sidewalks_dataset(args):
     return train_ds, val_ds
 
 
-def resize_img(image: tf.Tensor, label: tf.Tensor, resize: int) -> Tuple[tf.Tensor, tf.Tensor]:
+def resize_img(
+    image: tf.Tensor, label: tf.Tensor, resize: int
+) -> Tuple[tf.Tensor, tf.Tensor]:
     image = tf.image.resize(image, (resize, resize))
     label = tf.image.resize(label[..., None], (resize, resize))
     label = tf.squeeze(label, -1)
     return image, label
 
-def process_image(image: Image, label: Image, resize: int) -> Tuple[tf.Tensor, tf.Tensor]:
+
+def process_image(
+    image: Image, label: Image, resize: int
+) -> Tuple[tf.Tensor, tf.Tensor]:
     image = np.array(image)
     label = np.array(label)
 
@@ -118,7 +124,9 @@ def main(args):
 
     print(args.resize)
 
-    write_tfrecords(args.root_tfrecord_dir, train_ds, "train", args.batch_size, args.resize)
+    write_tfrecords(
+        args.root_tfrecord_dir, train_ds, "train", args.batch_size, args.resize
+    )
     write_tfrecords(args.root_tfrecord_dir, val_ds, "val", args.batch_size, args.resize)
 
 

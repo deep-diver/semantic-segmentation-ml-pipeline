@@ -89,18 +89,18 @@ def _input_fn(
     batch_size: int = 200,
 ) -> tf.data.Dataset:
     """
-    DataAccessor is responsible for accessing the data on disk, and 
+    DataAccessor is responsible for accessing the data on disk, and
     TensorFlowDatasetOptions provides options for TFXIO's TensorFlowDataset.
 
     the factory function tf_dataset_factory takes three inputs of List[str],
-    dataset_options.TensorFlowDatasetOptions, and schema_pb2.Schema. The 
+    dataset_options.TensorFlowDatasetOptions, and schema_pb2.Schema. The
     schema_pb2.Schema holds the information how the TFRecords are structured,
     like what kind of features are accessible. In this case, there are two
     features of image_xf and label_xf, and they are the preprocessed results
     from Transform component.
     - Transform component simply preprocess the raw inputs, then returns the
     transformed output in TFRecord format. tf_dataset_factory is just a handy
-    method to access TFRecord, and it is not strongly coupled with Transform 
+    method to access TFRecord, and it is not strongly coupled with Transform
     component.
 
     by giving label_key option in the TensorFlowDataset, the tf_dataset_factory
@@ -108,7 +108,7 @@ def _input_fn(
     the second term will hold label information, and the first term holds what
     ever the rest is in the dataset (image_xf for this case).
 
-    then, in the modeling part, you should have input layers with the names 
+    then, in the modeling part, you should have input layers with the names
     appearing in the first term Dict[str, Tensor]. For instance:
         inputs = tf.keras.layers.Input(..., name="image_xf")
 
@@ -127,6 +127,7 @@ def _input_fn(
     )
 
     return dataset
+
 
 def run_fn(fn_args: FnArgs):
     tf_transform_output = tft.TFTransformOutput(fn_args.transform_output)

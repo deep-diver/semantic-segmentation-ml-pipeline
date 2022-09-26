@@ -40,6 +40,7 @@ def load_sidewalks_dataset(args):
 
     return train_ds, val_ds
 
+
 def resize_img(image: tf.Tensor, label: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     image = tf.image.resize(image, (RESOLUTION, RESOLUTION))
     label = tf.image.resize(label[..., None], (RESOLUTION, RESOLUTION))

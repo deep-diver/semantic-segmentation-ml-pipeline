@@ -17,7 +17,7 @@ def _transformed_name(key: str) -> str:
 def preprocess(inputs):
     image_shape = inputs[_IMAGE_SHAPE_KEY]
     label_shape = inputs[_LABEL_SHAPE_KEY]
-    
+
     images = tf.reshape(inputs[_IMAGE_KEY], [image_shape[0], image_shape[1], 3])
     labels = tf.reshape(inputs[_LABEL_KEY], [label_shape[0], label_shape[1], 1])
 

@@ -11,6 +11,7 @@ _LR = 0.00006
     (https://www.tensorflow.org/tutorials/images/segmentation)
 """
 
+
 def build_model(input_name, label_name, num_labels) -> tf.keras.Model:
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=[_INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], include_top=False
