@@ -182,6 +182,8 @@ def _build_model(num_labels) -> tf.keras.Model:
     model.compile(
         optimizer=Adam(learning_rate=_LR),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        # by suppling "accuracy", Keras will automatically infer the appropriate variant.
+        # in this case, sparse_categorical_accuracy will be chosen.
         metrics=["accuracy"],
     )
     return model
