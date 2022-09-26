@@ -85,6 +85,36 @@ def _input_fn(
     is_train: bool = False,
     batch_size: int = 200,
 ) -> tf.data.Dataset:
+    """
+    DataAccessor is responsible for accessing the data on disk, and 
+    TensorFlowDatasetOptions provides options for TFXIO's TensorFlowDataset.
+
+    the factory function tf_dataset_factory takes three inputs of List[str],
+    dataset_options.TensorFlowDatasetOptions, and schema_pb2.Schema. The 
+    schema_pb2.Schema holds the information how the TFRecords are structured,
+    like what kind of features are accessible. In this case, there are two
+    features of image_xf and label_xf, and they are the preprocessed results
+    from Transform component.
+    - Transform component simply preprocess the raw inputs, then returns the
+    transformed output in TFRecord format. tf_dataset_factory is just a handy
+    method to access TFRecord, and it is not strongly coupled with Transform 
+    component.
+
+    by giving label_key option in the TensorFlowDataset, the tf_dataset_factory
+    outputs the dataset in the form of Tuple[Dict[str, Tensor], Tensor]. Here,
+    the second term will hold label information, and the first term holds what
+    ever the rest is in the dataset (image_xf for this case).
+
+    then, in the modeling part, you should have input layers with the names 
+    appearing in the first term Dict[str, Tensor]. For instance:
+        inputs = tf.keras.layers.Input(..., name="image_xf")
+
+    you could get rid of the label_key option, and it is totally optional. But
+    then, you should have the output layer named with the label key. Otherwise,
+    the model does not know which data from the Tuple to feed in the model. If
+    you use label_key option, it it will be directly used in the output layer.
+    """
+
     dataset = data_accessor.tf_dataset_factory(
         file_pattern,
         dataset_options.TensorFlowDatasetOptions(
