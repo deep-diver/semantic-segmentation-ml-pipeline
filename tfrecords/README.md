@@ -18,4 +18,4 @@ $ python create_tfrecords.py
 $ python create_tfrecords.py --resize 256
 ```
 
-In Google Cloud environment, the default machine couldn't not handle a large size of dataset, so we make `256` sized dataset. The original size dataset is there to experiment that how `ImportExampleGen` and `Transform` components could delegate their jobs to **Dataflow**.
+In Google Cloud environment, the default machine couldn't not handle a large size of dataset, so we make `256` sized dataset. The original size dataset is there to experiment that how `ImportExampleGen` and `Transform` components could delegate their jobs to **Dataflow**. Each component could be run with and without **Dataflow** integration independently. We are enabling **Dataflow** for `Transform` and `ImportExampleGen` at the same time because the fact that `ImportExampleGen` couldn't not handle the full resolution dataset suggests that `Transform` can't handle it too without **Dataflow**.
