@@ -8,10 +8,10 @@ from tfx_bsl.tfxio import dataset_options
 from tfx.components.trainer.fn_args_utils import FnArgs
 from tfx.components.trainer.fn_args_utils import DataAccessor
 
-from unet import build_model
+from .unet import build_model
 
 _CONCRETE_INPUT = "pixel_values"
-
+_INPUT_IMG_SIZE = 128
 _TRAIN_LENGTH = 800
 _EVAL_LENGTH = 200
 _TRAIN_BATCH_SIZE = 64
@@ -151,7 +151,7 @@ def run_fn(fn_args: FnArgs):
     num_labels = 35
     model = build_model(
         _transformed_name(_IMAGE_KEY),
-        _transformed_name(_IMAGE_KEY),
+        _transformed_name(_LABEL_KEY),
         num_labels,
     )
 
