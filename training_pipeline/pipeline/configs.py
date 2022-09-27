@@ -46,10 +46,10 @@ TRANSFORM_BEAM_ARGS = None
 EVAL_CONFIGS = tfma.EvalConfig(
     model_specs=[
         tfma.ModelSpec(
-            signature_name='from_examples',
-            preprocessing_function_names=['transform_features'],
+            signature_name="from_examples",
+            preprocessing_function_names=["transform_features"],
             label_key="label_xf",
-            prediction_key="label_xf"
+            prediction_key="label_xf",
         )
     ],
     slicing_specs=[tfma.SlicingSpec()],
