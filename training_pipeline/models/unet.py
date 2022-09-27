@@ -2,8 +2,7 @@ import tensorflow as tf
 import tensorflow_transform as tft
 from tensorflow.keras.optimizers import Adam
 
-_INPUT_IMG_SIZE = 128
-_LR = 0.00006
+from .hyperparam import INPUT_IMG_SIZE, LR
 
 """
     _build_model builds a UNET model. The implementation codes are
@@ -14,7 +13,7 @@ _LR = 0.00006
 
 def build_model(input_name, label_name, num_labels) -> tf.keras.Model:
     base_model = tf.keras.applications.MobileNetV2(
-        input_shape=[_INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], include_top=False
+        input_shape=[INPUT_IMG_SIZE, INPUT_IMG_SIZE, 3], include_top=False
     )
 
     # Use the activations of these layers
@@ -39,7 +38,7 @@ def build_model(input_name, label_name, num_labels) -> tf.keras.Model:
     ]
 
     inputs = tf.keras.layers.Input(
-        shape=[_INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3], name=input_name
+        shape=[INPUT_IMG_SIZE, INPUT_IMG_SIZE, 3], name=input_name
     )
 
     # Downsampling through the model
@@ -66,7 +65,7 @@ def build_model(input_name, label_name, num_labels) -> tf.keras.Model:
 
     model = tf.keras.Model(inputs=inputs, outputs=x)
     model.compile(
-        optimizer=Adam(learning_rate=_LR),
+        optimizer=Adam(learning_rate=LR),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         # by suppling "accuracy", Keras will automatically infer the appropriate variant.
         # in this case, sparse_categorical_accuracy will be chosen.
