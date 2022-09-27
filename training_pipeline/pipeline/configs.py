@@ -24,12 +24,12 @@ PIPELINE_IMAGE = f"gcr.io/{GOOGLE_CLOUD_PROJECT}/{PIPELINE_NAME}"
 OUTPUT_DIR = os.path.join("gs://", GCS_BUCKET_NAME)
 PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 
-DATA_PATH = "gs://sidewalks-tfx-hf/sidewalks-tfrecords/"
+DATA_PATH = "gs://sidewalks-tfx-lowres/sidewalks-tfrecords/"
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"
-TRAINING_FN = "models.model.run_fn"
-TUNER_FN = "models.model.tuner_fn"
-CLOUD_TUNER_FN = "models.model.tuner_fn"
+TRAINING_FN = "models.train.run_fn"
+TUNER_FN = "models.train.tuner_fn"
+CLOUD_TUNER_FN = "models.train.tuner_fn"
 
 GRADIO_APP_PATH = "apps.gradio.img_classifier"
 MODEL_HUB_REPO_PLACEHOLDER = "$MODEL_REPO_ID"
@@ -40,6 +40,7 @@ TRAIN_NUM_STEPS = 160
 EVAL_NUM_STEPS = 4
 
 EXAMPLE_GEN_BEAM_ARGS = None
+TRANSFORM_BEAM_ARGS = None
 
 GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
@@ -68,8 +69,6 @@ fullres_data = os.environ.get("FULL_RES_DATA", "false")
 if fullres_data.lower() == "true":
     DATA_PATH = "gs://sidewalks-tfx-fullres/sidewalks-tfrecords/"
 
-    TRAINING_FN = "models.model_full_res.run_fn"
-
     DATAFLOW_SERVICE_ACCOUNT = "csp-gde-dataflow@gcp-ml-172005.iam.gserviceaccount.com"
     DATAFLOW_MACHINE_TYPE = "n1-standard-4"
     DATAFLOW_MAX_WORKERS = 4
@@ -84,6 +83,18 @@ if fullres_data.lower() == "true":
         "--experiments=use_runner_v2",
         "--max_num_workers=" + str(DATAFLOW_MAX_WORKERS),
         "--disk_size_gb=" + str(DATAFLOW_DISK_SIZE_GB),
+    ]
+
+    TRANSFORM_BEAM_ARGS = [
+        "--runner=DataflowRunner",
+        "--project=" + GOOGLE_CLOUD_PROJECT,
+        "--region=" + GOOGLE_CLOUD_REGION,
+        "--service_account_email=" + DATAFLOW_SERVICE_ACCOUNT,
+        "--machine_type=" + DATAFLOW_MACHINE_TYPE,
+        "--experiments=use_runner_v2",
+        "--max_num_workers=" + str(DATAFLOW_MAX_WORKERS),
+        "--disk_size_gb=" + str(DATAFLOW_DISK_SIZE_GB),
+        "--worker_harness_container_image=" + PIPELINE_IMAGE,
     ]
 
     GCP_AI_PLATFORM_TRAINING_ARGS[vertex_training_const.TRAINING_ARGS_KEY][

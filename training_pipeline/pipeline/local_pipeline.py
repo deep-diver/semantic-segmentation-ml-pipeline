@@ -8,7 +8,10 @@ from tfx.proto import example_gen_pb2
 import absl
 import tensorflow_model_analysis as tfma
 from tfx.components import ImportExampleGen
+from tfx.components import SchemaGen
+from tfx.components import StatisticsGen
 from tfx.components import Trainer
+from tfx.components import Transform
 from tfx.components import Pusher
 from tfx.orchestration import pipeline
 from tfx.proto import example_gen_pb2
@@ -37,9 +40,24 @@ def create_pipeline(
     example_gen = ImportExampleGen(input_base=data_path, input_config=input_config)
     components.append(example_gen)
 
+    statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
+    components.append(statistics_gen)
+
+    schema_gen = SchemaGen(statistics=statistics_gen.outputs["statistics"])
+    components.append(schema_gen)
+
+    transform = Transform(
+        examples=example_gen.outputs["examples"],
+        schema=schema_gen.outputs["schema"],
+        preprocessing_fn=modules["preprocessing_fn"],
+    )
+    components.append(transform)
+
     trainer = Trainer(
         run_fn=modules["training_fn"],
-        examples=example_gen.outputs["examples"],
+        transformed_examples=transform.outputs["transformed_examples"],
+        transform_graph=transform.outputs["transform_graph"],
+        schema=schema_gen.outputs["schema"],
         train_args=train_args,
         eval_args=eval_args,
     )

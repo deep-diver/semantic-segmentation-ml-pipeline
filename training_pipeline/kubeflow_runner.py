@@ -23,12 +23,14 @@ def run():
             data_path=configs.DATA_PATH,
             modules={
                 "training_fn": configs.TRAINING_FN,
+                "preprocessing_fn": configs.PREPROCESSING_FN,
             },
             train_args=trainer_pb2.TrainArgs(num_steps=configs.TRAIN_NUM_STEPS),
             eval_args=trainer_pb2.EvalArgs(num_steps=configs.EVAL_NUM_STEPS),
             ai_platform_training_args=configs.GCP_AI_PLATFORM_TRAINING_ARGS,
             ai_platform_serving_args=configs.GCP_AI_PLATFORM_SERVING_ARGS,
             example_gen_beam_args=configs.EXAMPLE_GEN_BEAM_ARGS,
+            transform_beam_args=configs.TRANSFORM_BEAM_ARGS,
             # hf_model_release_args=configs.HF_MODEL_RELEASE_ARGS,
             # hf_space_release_args=configs.HF_SPACE_RELEASE_ARGS,
         )
