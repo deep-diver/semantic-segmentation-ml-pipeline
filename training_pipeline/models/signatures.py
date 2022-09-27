@@ -2,6 +2,7 @@ from typing import Dict
 
 import tensorflow as tf
 import tensorflow_transform as tft
+from tensorflow.keras.applications import mobilenet_v2
 
 from .utils import transformed_name
 from .common import LABEL_KEY, CONCRETE_INPUT
@@ -17,9 +18,9 @@ def _serving_preprocess(string_input):
     """
     decoded_input = tf.io.decode_base64(string_input)
     decoded = tf.io.decode_jpeg(decoded_input, channels=3)
-    decoded = decoded / 255
     resized = tf.image.resize(decoded, size=(INPUT_IMG_SIZE, INPUT_IMG_SIZE))
-    return resized
+    normalized = mobilenet_v2.preprocess_input(resized)
+    return normalized
 
 
 @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
