@@ -90,6 +90,7 @@ def create_pipeline(
         model=Channel(type=Model),
         model_blessing=Channel(type=ModelBlessing),
     ).with_id("latest_blessed_model_resolver")
+    components.append(model_resolver)
 
     evaluator = Evaluator(
         examples=example_gen.outputs["examples"],
@@ -97,6 +98,7 @@ def create_pipeline(
         baseline_model=model_resolver.outputs["model"],
         eval_config=eval_configs,
     )
+    components.append(evaluator)
 
     pusher_args = {
         "model": trainer.outputs["model"],
