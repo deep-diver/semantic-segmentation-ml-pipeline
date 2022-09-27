@@ -18,6 +18,10 @@ from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
 from tfx.types import Channel
 
+from tfx.types.standard_artifacts import Model
+from tfx.types.standard_artifacts import ModelBlessing
+from tfx.dsl.components.common import resolver
+from tfx.dsl.experimental.latest_blessed_model_resolver import LatestBlessedModelResolver
 
 def create_pipeline(
     pipeline_name: Text,
@@ -62,6 +66,14 @@ def create_pipeline(
         eval_args=eval_args,
     )
     components.append(trainer)
+
+    model_resolver = resolver.Resolver(
+        strategy_class=LatestBlessedModelResolver,
+        model=Channel(type=Model),
+        model_blessing=Channel(type=ModelBlessing),
+    ).with_id("latest_blessed_model_resolver")
+
+    
 
     pusher_args = {
         "model": trainer.outputs["model"],
