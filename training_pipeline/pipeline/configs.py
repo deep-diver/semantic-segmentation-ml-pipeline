@@ -43,6 +43,27 @@ EVAL_NUM_STEPS = 4
 EXAMPLE_GEN_BEAM_ARGS = None
 TRANSFORM_BEAM_ARGS = None
 
+"""
+EVAL_CONFIGS is to configuration for the Evaluator component
+to define how it is going to evalua the model performance.
+
+tfma.ModelSpec
+    signature_name is one of the signature in the SavedModel from
+    Trainer component, and it will be used to make predictions on 
+    given data. preprocessing_function_names allows us to include
+    a set of transformation(preprocessing) signatures in the Saved
+    Model from Trainer component. 
+
+    label_key and prediction_key will be used to compare the ground
+    truth and prediction results.
+
+slicing_specs
+    we use the entire dataset to evaluate the model performance. If
+    you want to evaluate the model based on different slices of data
+    set, you should prepare TFRecords to have multiple features which
+    of each corresponds to each slices(or categories), then write the
+    slicing_specs options accordingly.
+"""
 EVAL_CONFIGS = tfma.EvalConfig(
     model_specs=[
         tfma.ModelSpec(
