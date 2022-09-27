@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Text
 
 from tfx import v1 as tfx
+import tensorflow_model_analysis as tfma
 
 from ml_metadata.proto import metadata_store_pb2
 from tfx.proto import example_gen_pb2
@@ -9,6 +10,7 @@ from tfx.components import ImportExampleGen
 from tfx.components import SchemaGen
 from tfx.components import StatisticsGen
 from tfx.components import Transform
+from tfx.components import Evaluator
 from tfx.extensions.google_cloud_ai_platform.trainer.component import (
     Trainer as VertexTrainer,
 )
@@ -34,6 +36,7 @@ def create_pipeline(
     modules: Dict[Text, Text],
     train_args: trainer_pb2.TrainArgs,
     eval_args: trainer_pb2.EvalArgs,
+    eval_configs: tfma.EvalConfig,
     metadata_connection_config: Optional[metadata_store_pb2.ConnectionConfig] = None,
     ai_platform_training_args: Optional[Dict[Text, Text]] = None,
     ai_platform_serving_args: Optional[Dict[Text, Any]] = None,
@@ -87,6 +90,13 @@ def create_pipeline(
         model=Channel(type=Model),
         model_blessing=Channel(type=ModelBlessing),
     ).with_id("latest_blessed_model_resolver")
+
+    evaluator = Evaluator(
+        examples=example_gen.outputs["examples"],
+        model=trainer.outputs["model"],
+        baseline_model=model_resolver.outputs["model"],
+        eval_config=eval_configs,
+    )
 
     pusher_args = {
         "model": trainer.outputs["model"],

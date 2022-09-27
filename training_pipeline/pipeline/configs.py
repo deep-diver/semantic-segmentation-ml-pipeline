@@ -3,6 +3,7 @@ import tfx
 import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
 import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
 import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
+import tensorflow_model_analysis as tfma
 
 PIPELINE_NAME = "segformer-training-pipeline"
 
@@ -41,6 +42,38 @@ EVAL_NUM_STEPS = 4
 
 EXAMPLE_GEN_BEAM_ARGS = None
 TRANSFORM_BEAM_ARGS = None
+
+EVAL_CONFIGS = tfma.EvalConfig(
+    model_specs=[
+        tfma.ModelSpec(
+            signature_name='from_examples',
+            preprocessing_function_names=['transform_features'],
+            label_key="label_xf",
+            prediction_key="label_xf"
+        )
+    ],
+    slicing_specs=[tfma.SlicingSpec()],
+    metrics_specs=[
+        tfma.MetricsSpec(
+            metrics=[
+                tfma.MetricConfig(
+                    class_name="SparseCategoricalAccuracy",
+                    threshold=tfma.MetricThreshold(
+                        value_threshold=tfma.GenericValueThreshold(
+                            lower_bound={"value": 0.55}
+                        ),
+                        # Change threshold will be ignored if there is no
+                        # baseline model resolved from MLMD (first run).
+                        change_threshold=tfma.GenericChangeThreshold(
+                            direction=tfma.MetricDirection.HIGHER_IS_BETTER,
+                            absolute={"value": -1e-3},
+                        ),
+                    ),
+                )
+            ]
+        )
+    ],
+)
 
 GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
