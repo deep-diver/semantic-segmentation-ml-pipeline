@@ -10,9 +10,7 @@ from tfx.components.trainer.fn_args_utils import DataAccessor
 
 from .unet import build_model
 from .signatures import (
-    model_exporter,
-    transform_features_signature,
-    tf_examples_serving_signature,
+    model_exporter
 )
 from .utils import transformed_name
 from .common import IMAGE_KEY, LABEL_KEY
