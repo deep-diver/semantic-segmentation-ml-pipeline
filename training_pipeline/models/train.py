@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List
 
 import absl
 import tensorflow as tf
@@ -9,68 +9,20 @@ from tfx.components.trainer.fn_args_utils import FnArgs
 from tfx.components.trainer.fn_args_utils import DataAccessor
 
 from .unet import build_model
-
-_CONCRETE_INPUT = "pixel_values"
-_INPUT_IMG_SIZE = 128
-_TRAIN_LENGTH = 800
-_EVAL_LENGTH = 200
-_TRAIN_BATCH_SIZE = 64
-_EVAL_BATCH_SIZE = 64
-_EPOCHS = 2
-
-_IMAGE_KEY = "image"
-_LABEL_KEY = "label"
-
-
-def INFO(text: str):
-    absl.logging.info(text)
-
-
-def _transformed_name(key: str) -> str:
-    return key + "_xf"
-
-
-"""
-    _serving_preprocess, _serving_preprocess_fn, and 
-    _model_exporter functions are defined to provide pre-
-    processing capabilities when the model is served.
-"""
-
-
-def _serving_preprocess(string_input):
-    decoded_input = tf.io.decode_base64(string_input)
-    decoded = tf.io.decode_jpeg(decoded_input, channels=3)
-    decoded = decoded / 255
-    resized = tf.image.resize(decoded, size=(_INPUT_IMG_SIZE, _INPUT_IMG_SIZE))
-    return resized
-
-
-@tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
-def _serving_preprocess_fn(string_input):
-    decoded_images = tf.map_fn(
-        _serving_preprocess, string_input, dtype=tf.float32, back_prop=False
-    )
-    return {_CONCRETE_INPUT: decoded_images}
-
-
-def _model_exporter(model: tf.keras.Model):
-    m_call = tf.function(model.call).get_concrete_function(
-        tf.TensorSpec(
-            shape=[None, _INPUT_IMG_SIZE, _INPUT_IMG_SIZE, 3],
-            dtype=tf.float32,
-            name=_CONCRETE_INPUT,
-        )
-    )
-
-    @tf.function(input_signature=[tf.TensorSpec([None], tf.string)])
-    def serving_fn(string_input):
-        images = _serving_preprocess_fn(string_input)
-        logits = m_call(**images)
-        seg_mask = tf.math.argmax(logits, -1)
-        return {"seg_mask": seg_mask}
-
-    return serving_fn
-
+from .signatures import (
+    model_exporter,
+    transform_features_signature,
+    tf_examples_serving_signature,
+)
+from .utils import transformed_name
+from .common import IMAGE_KEY, LABEL_KEY
+from .hyperparams import (
+    TRAIN_LENGTH,
+    EVAL_LENGTH,
+    TRAIN_BATCH_SIZE,
+    EVAL_BATCH_SIZE,
+    EPOCHS,
+)
 
 """
     _input_fn reads TFRecord files with the given file_pattern passed down 
@@ -121,7 +73,7 @@ def _input_fn(
     dataset = data_accessor.tf_dataset_factory(
         file_pattern,
         dataset_options.TensorFlowDatasetOptions(
-            batch_size=batch_size, label_key=_transformed_name(_LABEL_KEY)
+            batch_size=batch_size, label_key=transformed_name(LABEL_KEY)
         ),
         tf_transform_output.transformed_metadata.schema,
     )
@@ -137,7 +89,7 @@ def run_fn(fn_args: FnArgs):
         fn_args.data_accessor,
         tf_transform_output,
         is_train=True,
-        batch_size=_TRAIN_BATCH_SIZE,
+        batch_size=TRAIN_BATCH_SIZE,
     )
 
     eval_dataset = _input_fn(
@@ -145,24 +97,32 @@ def run_fn(fn_args: FnArgs):
         fn_args.data_accessor,
         tf_transform_output,
         is_train=False,
-        batch_size=_EVAL_BATCH_SIZE,
+        batch_size=EVAL_BATCH_SIZE,
     )
 
     num_labels = 35
     model = build_model(
-        _transformed_name(_IMAGE_KEY),
-        _transformed_name(_LABEL_KEY),
+        transformed_name(IMAGE_KEY),
+        transformed_name(LABEL_KEY),
         num_labels,
     )
 
     model.fit(
         train_dataset,
-        steps_per_epoch=_TRAIN_LENGTH // _TRAIN_BATCH_SIZE,
+        steps_per_epoch=TRAIN_LENGTH // TRAIN_BATCH_SIZE,
         validation_data=eval_dataset,
-        validation_steps=_EVAL_LENGTH // _TRAIN_BATCH_SIZE,
-        epochs=_EPOCHS,
+        validation_steps=EVAL_LENGTH // TRAIN_BATCH_SIZE,
+        epochs=EPOCHS,
     )
 
     model.save(
-        fn_args.serving_model_dir, save_format="tf", signatures=_model_exporter(model)
+        fn_args.serving_model_dir,
+        save_format="tf",
+        signatures={
+            "serving_default": model_exporter(model),
+            "transform_features": transform_features_signature(
+                model, tf_transform_output
+            ),
+            "from_examples": tf_examples_serving_signature(model, tf_transform_output),
+        },
     )
