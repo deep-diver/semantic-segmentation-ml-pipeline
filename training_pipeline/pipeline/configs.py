@@ -3,6 +3,7 @@ import tfx
 import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
 import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
 import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
+import tensorflow_model_analysis as tfma
 
 PIPELINE_NAME = "segformer-training-pipeline"
 
@@ -41,6 +42,59 @@ EVAL_NUM_STEPS = 4
 
 EXAMPLE_GEN_BEAM_ARGS = None
 TRANSFORM_BEAM_ARGS = None
+
+"""
+EVAL_CONFIGS is to configuration for the Evaluator component
+to define how it is going to evalua the model performance.
+
+tfma.ModelSpec
+    signature_name is one of the signature in the SavedModel from
+    Trainer component, and it will be used to make predictions on 
+    given data. preprocessing_function_names allows us to include
+    a set of transformation(preprocessing) signatures in the Saved
+    Model from Trainer component. 
+
+    label_key and prediction_key will be used to compare the ground
+    truth and prediction results.
+
+slicing_specs
+    we use the entire dataset to evaluate the model performance. If
+    you want to evaluate the model based on different slices of data
+    set, you should prepare TFRecords to have multiple features which
+    of each corresponds to each slices(or categories), then write the
+    slicing_specs options accordingly.
+"""
+EVAL_CONFIGS = tfma.EvalConfig(
+    model_specs=[
+        tfma.ModelSpec(
+            signature_name="from_examples",
+            preprocessing_function_names=["transform_features"],
+            label_key="label_xf",
+            prediction_key="label_xf",
+        )
+    ],
+    slicing_specs=[tfma.SlicingSpec()],
+    metrics_specs=[
+        tfma.MetricsSpec(
+            metrics=[
+                tfma.MetricConfig(
+                    class_name="SparseCategoricalAccuracy",
+                    threshold=tfma.MetricThreshold(
+                        value_threshold=tfma.GenericValueThreshold(
+                            lower_bound={"value": 0.55}
+                        ),
+                        # Change threshold will be ignored if there is no
+                        # baseline model resolved from MLMD (first run).
+                        change_threshold=tfma.GenericChangeThreshold(
+                            direction=tfma.MetricDirection.HIGHER_IS_BETTER,
+                            absolute={"value": -1e-3},
+                        ),
+                    ),
+                )
+            ]
+        )
+    ],
+)
 
 GCP_AI_PLATFORM_TRAINING_ARGS = {
     vertex_const.ENABLE_VERTEX_KEY: True,
