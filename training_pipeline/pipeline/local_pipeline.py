@@ -12,12 +12,19 @@ from tfx.components import SchemaGen
 from tfx.components import StatisticsGen
 from tfx.components import Trainer
 from tfx.components import Transform
+from tfx.components import Evaluator
 from tfx.components import Pusher
 from tfx.orchestration import pipeline
 from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
 from tfx.types import Channel
 
+from tfx.types.standard_artifacts import Model
+from tfx.types.standard_artifacts import ModelBlessing
+from tfx.dsl.components.common import resolver
+from tfx.dsl.experimental.latest_blessed_model_resolver import (
+    LatestBlessedModelResolver,
+)
 
 def create_pipeline(
     pipeline_name: Text,
@@ -26,6 +33,7 @@ def create_pipeline(
     modules: Dict[Text, Text],
     train_args: trainer_pb2.TrainArgs,
     eval_args: trainer_pb2.EvalArgs,
+    eval_configs: tfma.EvalConfig,
     serving_model_dir: Text,
     metadata_connection_config: Optional[metadata_store_pb2.ConnectionConfig] = None,
 ) -> tfx.dsl.Pipeline:
@@ -62,6 +70,21 @@ def create_pipeline(
         eval_args=eval_args,
     )
     components.append(trainer)
+
+    model_resolver = resolver.Resolver(
+        strategy_class=LatestBlessedModelResolver,
+        model=Channel(type=Model),
+        model_blessing=Channel(type=ModelBlessing),
+    ).with_id("latest_blessed_model_resolver")
+    components.append(model_resolver)
+
+    evaluator = Evaluator(
+        examples=example_gen.outputs["examples"],
+        model=trainer.outputs["model"],
+        baseline_model=model_resolver.outputs["model"],
+        eval_config=eval_configs,
+    )
+    components.append(evaluator)
 
     pusher_args = {
         "model": trainer.outputs["model"],
