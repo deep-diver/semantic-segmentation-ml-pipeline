@@ -1,31 +1,22 @@
 import tensorflow as tf
 from tensorflow.keras.applications import mobilenet_v2
-
-_INPUT_IMG_SIZE = 128
-
-_IMAGE_KEY = "image"
-_IMAGE_SHAPE_KEY = "image_shape"
-_LABEL_KEY = "label"
-_LABEL_SHAPE_KEY = "label_shape"
-
-
-def _transformed_name(key: str) -> str:
-    return key + "_xf"
-
+from .utils import transformed_name
+from .common import IMAGE_KEY, IMAGE_SHAPE_KEY, LABEL_KEY, LABEL_SHAPE_KEY
+from .hyperparams import INPUT_IMG_SIZE
 
 # output should have the same keys as inputs
 def preprocess(inputs):
-    image_shape = inputs[_IMAGE_SHAPE_KEY]
-    label_shape = inputs[_LABEL_SHAPE_KEY]
+    image_shape = inputs[IMAGE_SHAPE_KEY]
+    label_shape = inputs[LABEL_SHAPE_KEY]
 
-    images = tf.reshape(inputs[_IMAGE_KEY], [image_shape[0], image_shape[1], 3])
-    labels = tf.reshape(inputs[_LABEL_KEY], [label_shape[0], label_shape[1], 1])
+    images = tf.reshape(inputs[IMAGE_KEY], [image_shape[0], image_shape[1], 3])
+    labels = tf.reshape(inputs[LABEL_KEY], [label_shape[0], label_shape[1], 1])
 
     return {
-        _IMAGE_KEY: images,
-        _IMAGE_SHAPE_KEY: inputs[_IMAGE_SHAPE_KEY],
-        _LABEL_KEY: labels,
-        _LABEL_SHAPE_KEY: inputs[_LABEL_SHAPE_KEY],
+        IMAGE_KEY: images,
+        IMAGE_SHAPE_KEY: inputs[IMAGE_SHAPE_KEY],
+        LABEL_KEY: labels,
+        LABEL_SHAPE_KEY: inputs[LABEL_SHAPE_KEY],
     }
 
 
@@ -41,16 +32,16 @@ def preprocessing_fn(inputs):
 
     features = tf.map_fn(preprocess, inputs)
 
-    features[_IMAGE_KEY] = tf.image.resize(
-        features[_IMAGE_KEY], [_INPUT_IMG_SIZE, _INPUT_IMG_SIZE]
+    features[IMAGE_KEY] = tf.image.resize(
+        features[IMAGE_KEY], [INPUT_IMG_SIZE, INPUT_IMG_SIZE]
     )
-    features[_LABEL_KEY] = tf.image.resize(
-        features[_LABEL_KEY], [_INPUT_IMG_SIZE, _INPUT_IMG_SIZE]
+    features[LABEL_KEY] = tf.image.resize(
+        features[LABEL_KEY], [INPUT_IMG_SIZE, INPUT_IMG_SIZE]
     )
 
-    image_features = mobilenet_v2.preprocess_input(features[_IMAGE_KEY])
+    image_features = mobilenet_v2.preprocess_input(features[IMAGE_KEY])
 
-    outputs[_transformed_name(_IMAGE_KEY)] = image_features
-    outputs[_transformed_name(_LABEL_KEY)] = features[_LABEL_KEY]
+    outputs[transformed_name(IMAGE_KEY)] = image_features
+    outputs[transformed_name(LABEL_KEY)] = features[LABEL_KEY]
 
     return outputs
