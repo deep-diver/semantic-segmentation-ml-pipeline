@@ -89,6 +89,7 @@ def create_pipeline(
 
     pusher_args = {
         "model": trainer.outputs["model"],
+        "model_blessing": evaluator.outputs['blessing'],
         "push_destination": tfx.proto.PushDestination(
             filesystem=tfx.proto.PushDestination.Filesystem(
                 base_directory=serving_model_dir

@@ -104,6 +104,7 @@ def create_pipeline(
 
     pusher_args = {
         "model": trainer.outputs["model"],
+        "model_blessing": evaluator.outputs['blessing'],
         "custom_config": ai_platform_serving_args,
     }
     pusher = VertexPusher(**pusher_args)  # pylint: disable=unused-variable
