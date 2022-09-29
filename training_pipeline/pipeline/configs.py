@@ -67,6 +67,9 @@ slicing_specs
 EVAL_CONFIGS = tfma.EvalConfig(
     model_specs=[
         tfma.ModelSpec(
+            # the names in the signature_name preprocessing_function_names
+            # are defined in the `signatures` parameter when model.save()
+            # you can find how it is done in models/train.py
             signature_name="from_examples",
             preprocessing_function_names=["transform_features"],
             label_key="label_xf",
