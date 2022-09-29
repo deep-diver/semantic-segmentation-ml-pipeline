@@ -44,8 +44,10 @@ EXAMPLE_GEN_BEAM_ARGS = None
 TRANSFORM_BEAM_ARGS = None
 
 """
-EVAL_CONFIGS is to configuration for the Evaluator component
-to define how it is going to evalua the model performance.
+EVAL_CONFIGS is to configuration for the Evaluator component to define 
+how it is going to evalua the model performance. The full spec follows 
+the EvalConfig protocol buffer message, which can be found here: 
+https://github.com/tensorflow/model-analysis/blob/v0.41.0/tensorflow_model_analysis/proto/config.proto
 
 tfma.ModelSpec
     signature_name is one of the signature in the SavedModel from
@@ -62,7 +64,9 @@ slicing_specs
     you want to evaluate the model based on different slices of data
     set, you should prepare TFRecords to have multiple features which
     of each corresponds to each slices(or categories), then write the
-    slicing_specs options accordingly.
+    slicing_specs options accordingly. Also we can evaluate the model 
+    performance on different slices of data differently with PerSlice
+    MetricThreshold in the metrics_specs section.
 """
 EVAL_CONFIGS = tfma.EvalConfig(
     model_specs=[
@@ -83,11 +87,20 @@ EVAL_CONFIGS = tfma.EvalConfig(
                 tfma.MetricConfig(
                     class_name="SparseCategoricalAccuracy",
                     threshold=tfma.MetricThreshold(
+                        # value_threshold is normally defined to set the minimum 
+                        # performance threshold. That means a model whose perfor
+                        # mance is better than this is going to be the first model, 
+                        # and it also means that it is only used when there is no 
+                        # model deployed in production yet.
                         value_threshold=tfma.GenericValueThreshold(
                             lower_bound={"value": 0.55}
                         ),
-                        # Change threshold will be ignored if there is no
-                        # baseline model resolved from MLMD (first run).
+                        # We can specify two models in the Evaluator component. One 
+                        # is the currently trained model, and the other one is the 
+                        # best model currently deployed(retrieved from the Artifact 
+                        # Store). change_threshold let us to define the threshold by 
+                        # how much the currently trained model should be better than 
+                        # the previous model to replace it.
                         change_threshold=tfma.GenericChangeThreshold(
                             direction=tfma.MetricDirection.HIGHER_IS_BETTER,
                             absolute={"value": -1e-3},
