@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Text
 
 from tfx import v1 as tfx
+import tensorflow_model_analysis as tfma
 
 from ml_metadata.proto import metadata_store_pb2
 from tfx.proto import example_gen_pb2
@@ -9,6 +10,7 @@ from tfx.components import ImportExampleGen
 from tfx.components import SchemaGen
 from tfx.components import StatisticsGen
 from tfx.components import Transform
+from tfx.components import Evaluator
 from tfx.extensions.google_cloud_ai_platform.trainer.component import (
     Trainer as VertexTrainer,
 )
@@ -21,6 +23,13 @@ from tfx.orchestration import pipeline
 from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
 
+from tfx.types import Channel
+from tfx.types.standard_artifacts import Model
+from tfx.types.standard_artifacts import ModelBlessing
+from tfx.dsl.components.common import resolver
+from tfx.dsl.experimental.latest_blessed_model_resolver import (
+    LatestBlessedModelResolver,
+)
 
 def create_pipeline(
     pipeline_name: Text,
@@ -29,6 +38,7 @@ def create_pipeline(
     modules: Dict[Text, Text],
     train_args: trainer_pb2.TrainArgs,
     eval_args: trainer_pb2.EvalArgs,
+    eval_configs: tfma.EvalConfig,
     metadata_connection_config: Optional[metadata_store_pb2.ConnectionConfig] = None,
     ai_platform_training_args: Optional[Dict[Text, Text]] = None,
     ai_platform_serving_args: Optional[Dict[Text, Any]] = None,
@@ -77,8 +87,24 @@ def create_pipeline(
     trainer = VertexTrainer(**trainer_args)
     components.append(trainer)
 
+    model_resolver = resolver.Resolver(
+        strategy_class=LatestBlessedModelResolver,
+        model=Channel(type=Model),
+        model_blessing=Channel(type=ModelBlessing),
+    ).with_id("latest_blessed_model_resolver")
+    components.append(model_resolver)
+
+    evaluator = Evaluator(
+        examples=example_gen.outputs["examples"],
+        model=trainer.outputs["model"],
+        baseline_model=model_resolver.outputs["model"],
+        eval_config=eval_configs,
+    )
+    components.append(evaluator)
+
     pusher_args = {
         "model": trainer.outputs["model"],
+        "model_blessing": evaluator.outputs['blessing'],
         "custom_config": ai_platform_serving_args,
     }
     pusher = VertexPusher(**pusher_args)  # pylint: disable=unused-variable
