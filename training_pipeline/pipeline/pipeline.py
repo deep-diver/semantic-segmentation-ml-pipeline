@@ -17,8 +17,6 @@ from tfx.extensions.google_cloud_ai_platform.trainer.component import (
 from tfx.extensions.google_cloud_ai_platform.pusher.component import (
     Pusher as VertexPusher,
 )
-from pipeline.components.pusher.HFModelPusher.component import Pusher as HFModelPusher
-from pipeline.components.pusher.HFSpacePusher.component import Pusher as HFSpacePusher
 from tfx.orchestration import pipeline
 from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
@@ -30,6 +28,7 @@ from tfx.dsl.components.common import resolver
 from tfx.dsl.experimental.latest_blessed_model_resolver import (
     LatestBlessedModelResolver,
 )
+
 
 def create_pipeline(
     pipeline_name: Text,
@@ -104,7 +103,7 @@ def create_pipeline(
 
     pusher_args = {
         "model": trainer.outputs["model"],
-        "model_blessing": evaluator.outputs['blessing'],
+        "model_blessing": evaluator.outputs["blessing"],
         "custom_config": ai_platform_serving_args,
     }
     pusher = VertexPusher(**pusher_args)  # pylint: disable=unused-variable
