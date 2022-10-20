@@ -1,17 +1,13 @@
 from absl import logging
-
 from tfx import v1 as tfx
 from tfx.orchestration.kubeflow.v2 import kubeflow_v2_dag_runner as runner
 from tfx.proto import trainer_pb2
 
-from pipeline import configs
-from pipeline import pipeline
+from pipeline import configs, pipeline
 
 
 def run():
-    runner_config = runner.KubeflowV2DagRunnerConfig(
-        default_image=configs.PIPELINE_IMAGE
-    )
+    runner_config = runner.KubeflowV2DagRunnerConfig(default_image=configs.PIPELINE_IMAGE)
 
     runner.KubeflowV2DagRunner(
         config=runner_config,
@@ -32,8 +28,7 @@ def run():
             ai_platform_serving_args=configs.GCP_AI_PLATFORM_SERVING_ARGS,
             example_gen_beam_args=configs.EXAMPLE_GEN_BEAM_ARGS,
             transform_beam_args=configs.TRANSFORM_BEAM_ARGS,
-            # hf_model_release_args=configs.HF_MODEL_RELEASE_ARGS,
-            # hf_space_release_args=configs.HF_SPACE_RELEASE_ARGS,
+            hf_pusher_args=configs.HF_PUSHER_ARGS,
         )
     )
 
