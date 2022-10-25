@@ -38,7 +38,10 @@ _DEFAULT_MODEL_VERSION_PLACEHOLDER_KEY = "$MODEL_VERSION"
 
 def _is_text_file(path):
     mimetype = mimetypes.guess_type(path)
-    return 'text' in mimetype[0]
+    if mimetype[0] != None:
+        return 'text' in mimetype[0]
+    
+    return False
 
 def _replace_placeholders_in_files(
     root_dir: str, placeholder_to_replace: Dict[str, str]
