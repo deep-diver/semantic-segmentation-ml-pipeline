@@ -18,6 +18,7 @@ machine learning model to HuggingFace Hub.
 """
 from typing import Text, Any, Dict, Optional
 
+import mimetypes
 import tempfile
 import tensorflow as tf
 from absl import logging
@@ -35,6 +36,12 @@ _DEFAULT_MODEL_REPO_PLACEHOLDER_KEY = "$MODEL_REPO_ID"
 _DEFAULT_MODEL_URL_PLACEHOLDER_KEY = "$MODEL_REPO_URL"
 _DEFAULT_MODEL_VERSION_PLACEHOLDER_KEY = "$MODEL_VERSION"
 
+def _is_text_file(path):
+    mimetype = mimetypes.guess_type(path)
+    if mimetype[0] != None:
+        return 'text' in mimetype[0]
+    
+    return False
 
 def _replace_placeholders_in_files(
     root_dir: str, placeholder_to_replace: Dict[str, str]
@@ -58,16 +65,17 @@ def _replace_placeholders_in_file(
     """replace special tokens with the given values in placeholder_
     to_replace. This function gets called by _replace_placeholders
     _in_files function"""
-    with tf.io.gfile.GFile(filepath, "r") as f:
-        source_code = f.read()
+    if _is_text_file(filepath):
+        with tf.io.gfile.GFile(filepath, "r") as f:
+            source_code = f.read()
 
-    for placeholder in placeholder_to_replace:
-        source_code = source_code.replace(
-            placeholder, placeholder_to_replace[placeholder]
-        )
+        for placeholder in placeholder_to_replace:
+            source_code = source_code.replace(
+                placeholder, placeholder_to_replace[placeholder]
+            )
 
-    with tf.io.gfile.GFile(filepath, "w") as f:
-        f.write(source_code)
+        with tf.io.gfile.GFile(filepath, "w") as f:
+            f.write(source_code)
 
 
 def _replace_placeholders(

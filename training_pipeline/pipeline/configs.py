@@ -1,9 +1,10 @@
 import os  # pylint: disable=unused-import
+
+import tensorflow_model_analysis as tfma
 import tfx
 import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
 import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
 import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
-import tensorflow_model_analysis as tfma
 
 PIPELINE_NAME = "segformer-training-pipeline"
 
@@ -87,19 +88,19 @@ EVAL_CONFIGS = tfma.EvalConfig(
                 tfma.MetricConfig(
                     class_name="SparseCategoricalAccuracy",
                     threshold=tfma.MetricThreshold(
-                        # value_threshold is normally defined to set the minimum 
+                        # value_threshold is normally defined to set the minimum
                         # performance threshold. That means a model whose perfor
-                        # mance is better than this is going to be the first model, 
-                        # and it also means that it is only used when there is no 
+                        # mance is better than this is going to be the first model,
+                        # and it also means that it is only used when there is no
                         # model deployed in production yet.
                         value_threshold=tfma.GenericValueThreshold(
                             lower_bound={"value": 0.55}
                         ),
-                        # We can specify two models in the Evaluator component. One 
-                        # is the currently trained model, and the other one is the 
-                        # best model currently deployed(retrieved from the Artifact 
-                        # Store). change_threshold let us to define the threshold by 
-                        # how much the currently trained model should be better than 
+                        # We can specify two models in the Evaluator component. One
+                        # is the currently trained model, and the other one is the
+                        # best model currently deployed(retrieved from the Artifact
+                        # Store). change_threshold let us to define the threshold by
+                        # how much the currently trained model should be better than
                         # the previous model to replace it.
                         change_threshold=tfma.GenericChangeThreshold(
                             direction=tfma.MetricDirection.HIGHER_IS_BETTER,
@@ -199,22 +200,11 @@ GCP_AI_PLATFORM_SERVING_ARGS = {
     },
 }
 
-HF_MODEL_RELEASE_ARGS = {
-    "HF_MODEL_RELEASE": {
-        "ACCESS_TOKEN": "$HF_ACCESS_TOKEN",
-        "USERNAME": "chansung",
-        "REPONAME": PIPELINE_NAME,
-    }
-}
-
-HF_SPACE_RELEASE_ARGS = {
-    "HF_SPACE_RELEASE": {
-        "ACCESS_TOKEN": "$HF_ACCESS_TOKEN",
-        "USERNAME": "chansung",
-        "REPONAME": PIPELINE_NAME,
-        "APP_PATH": GRADIO_APP_PATH,
-        "MODEL_HUB_REPO_PLACEHOLDER": MODEL_HUB_REPO_PLACEHOLDER,
-        "MODEL_HUB_URL_PLACEHOLDER": MODEL_HUB_URL_PLACEHOLDER,
-        "MODEL_VERSION_PLACEHOLDER": MODEL_VERSION_PLACEHOLDER,
-    }
+HF_PUSHER_ARGS = {
+    "username": "chansung",
+    "access_token": "$HF_ACCESS_TOKEN",
+    "repo_name": PIPELINE_NAME,
+    "space_config": {
+        "app_path": "apps.gradio.semantic_segmentation",
+    },
 }
