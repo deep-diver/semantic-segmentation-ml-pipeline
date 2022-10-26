@@ -101,7 +101,7 @@ def prepare_tf_dataset(
 def get_tf_datasets(args) -> Tuple[tf.data.Dataset, tf.data.Dataset]:
     input_img_paths, target_img_paths = load_paths(args)
     train_img_paths, train_target_paths, val_img_paths, val_target_paths = split_paths(
-        input_img_paths, target_img_paths
+        input_img_paths, target_img_paths, args.split
     )
     train_ds = prepare_tf_dataset(train_img_paths, train_target_paths, args.batch_size)
     val_ds = prepare_tf_dataset(val_img_paths, val_target_paths, args.batch_size)
@@ -176,13 +176,13 @@ def parse_args():
         "--input_dir",
         help="Path to the directory containing all images.",
         default="images/",
-        type=int,
+        type=str,
     )
     parser.add_argument(
         "--target_dir",
         help="Path to the directory containing all targets.",
         default="annotations/trimaps/",
-        type=int,
+        type=str,
     )
     parser.add_argument(
         "--root_tfrecord_dir",
