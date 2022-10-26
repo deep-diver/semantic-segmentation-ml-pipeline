@@ -141,7 +141,7 @@ def create_tfrecord(image: Image, label: Image, resize: int):
 def write_tfrecords(root_dir: str, dataset: tf.data.Dataset, split: str, resize: int):
     print(f"Preparing TFRecords for split: {split}.")
 
-    for shard, (image_paths, label_paths) in enumerate(tqdm(dataset)):
+    for shard, (image_paths, label_paths) in enumerate(tqdm.tqdm(dataset)):
         shard_size = image_paths.numpy().shape[0]
         filename = os.path.join(
             root_dir, "{}-{:02d}-{}.tfrec".format(split, shard, shard_size)
