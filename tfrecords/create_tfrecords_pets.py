@@ -149,8 +149,8 @@ def write_tfrecords(root_dir: str, dataset: tf.data.Dataset, split: str, resize:
 
         with tf.io.TFRecordWriter(filename) as out_file:
             for i in range(shard_size):
-                img_path = image_paths["pixel_values"][i]
-                label_path = label_paths["label"][i]
+                img_path = image_paths[i]
+                label_path = label_paths[i]
                 example = create_tfrecord(img_path, label_path, resize)
                 out_file.write(example)
             print("Wrote file {} containing {} records".format(filename, shard_size))
