@@ -138,7 +138,7 @@ def create_tfrecord(image: Image, label: Image, resize: int):
     ).SerializeToString()
 
 
-def write_tfrecords(root_dir, dataset, split, resize):
+def write_tfrecords(root_dir: str, dataset: tf.data.Dataset, split: str, resize: int):
     print(f"Preparing TFRecords for split: {split}.")
 
     for shard, (image_paths, label_paths) in enumerate(tqdm(dataset)):
@@ -163,10 +163,8 @@ def main(args):
     if not os.path.exists(args.root_tfrecord_dir):
         os.makedirs(args.root_tfrecord_dir, exist_ok=True)
 
-    write_tfrecords(
-        args.root_tfrecord_dir, train_ds, "train", args.batch_size, args.resize
-    )
-    write_tfrecords(args.root_tfrecord_dir, val_ds, "val", args.batch_size, args.resize)
+    write_tfrecords(args.root_tfrecord_dir, train_ds, "train", args.resize)
+    write_tfrecords(args.root_tfrecord_dir, val_ds, "val", args.resize)
 
 
 def parse_args():
