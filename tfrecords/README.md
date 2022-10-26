@@ -24,6 +24,8 @@ In Google Cloud environment, the default machine couldn't not handle a large siz
 the prerequisites:
 
 ```bash
-curl -O https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz
-curl -O https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz
+wget https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz
+wget https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz
+tar xf images.tar.gz
+tar xf annotations.tar.gz
 ```
