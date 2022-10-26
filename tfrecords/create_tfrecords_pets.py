@@ -78,7 +78,7 @@ def process_image(
 
 
 def split_paths(img_paths: List[str], target_paths: List[str], split: float):
-    val_samples = int(img_paths * split)
+    val_samples = int(len(img_paths) * split)
 
     random.Random(SEED).shuffle(img_paths)
     random.Random(SEED).shuffle(target_paths)
