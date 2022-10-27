@@ -1,12 +1,10 @@
 import os  # pylint: disable=unused-import
 
 import tensorflow_model_analysis as tfma
-import tfx
 import tfx.extensions.google_cloud_ai_platform.constants as vertex_const
 import tfx.extensions.google_cloud_ai_platform.trainer.executor as vertex_training_const
-import tfx.extensions.google_cloud_ai_platform.tuner.executor as vertex_tuner_const
 
-PIPELINE_NAME = "segformer-training-pipeline"
+PIPELINE_NAME = "segmentation-training-pipeline"
 
 try:
     import google.auth  # pylint: disable=g-import-not-at-top  # pytype: disable=import-error
@@ -26,7 +24,7 @@ PIPELINE_IMAGE = f"gcr.io/{GOOGLE_CLOUD_PROJECT}/{PIPELINE_NAME}"
 OUTPUT_DIR = os.path.join("gs://", GCS_BUCKET_NAME)
 PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 
-DATA_PATH = "gs://sidewalks-tfx-lowres/sidewalks-tfrecords/"
+DATA_PATH = "gs://pets-tfrecords/pets-tfrecords/"
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"
 TRAINING_FN = "models.train.run_fn"

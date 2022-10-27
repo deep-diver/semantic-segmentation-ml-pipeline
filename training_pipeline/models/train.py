@@ -4,25 +4,18 @@ import absl
 import tensorflow as tf
 import tensorflow_transform as tft
 from tensorflow.keras.optimizers import Adam
+from tfx.components.trainer.fn_args_utils import DataAccessor, FnArgs
 from tfx_bsl.tfxio import dataset_options
-from tfx.components.trainer.fn_args_utils import FnArgs
-from tfx.components.trainer.fn_args_utils import DataAccessor
 
-from .unet import build_model
+from .common import IMAGE_KEY, LABEL_KEY, NUM_LABELS
+from .hyperparams import EPOCHS, EVAL_BATCH_SIZE, TRAIN_BATCH_SIZE
 from .signatures import (
     model_exporter,
-    transform_features_signature,
     tf_examples_serving_signature,
+    transform_features_signature,
 )
+from .unet import build_model
 from .utils import transformed_name
-from .common import IMAGE_KEY, LABEL_KEY
-from .hyperparams import (
-    TRAIN_LENGTH,
-    EVAL_LENGTH,
-    TRAIN_BATCH_SIZE,
-    EVAL_BATCH_SIZE,
-    EPOCHS,
-)
 
 """
     _input_fn reads TFRecord files with the given file_pattern passed down 
@@ -99,21 +92,11 @@ def run_fn(fn_args: FnArgs):
         is_train=False,
         batch_size=EVAL_BATCH_SIZE,
     )
-
-    num_labels = 35
     model = build_model(
-        transformed_name(IMAGE_KEY),
-        transformed_name(LABEL_KEY),
-        num_labels,
+        transformed_name(IMAGE_KEY), transformed_name(LABEL_KEY), NUM_LABELS
     )
 
-    model.fit(
-        train_dataset,
-        steps_per_epoch=TRAIN_LENGTH // TRAIN_BATCH_SIZE,
-        validation_data=eval_dataset,
-        validation_steps=EVAL_LENGTH // TRAIN_BATCH_SIZE,
-        epochs=EPOCHS,
-    )
+    model.fit(train_dataset, validation_data=eval_dataset, epochs=EPOCHS)
 
     model.save(
         fn_args.serving_model_dir,
