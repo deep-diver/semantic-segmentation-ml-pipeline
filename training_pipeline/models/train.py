@@ -1,6 +1,5 @@
 from typing import List
 
-import absl
 import tensorflow as tf
 import tensorflow_transform as tft
 from tfx.components.trainer.fn_args_utils import DataAccessor, FnArgs
@@ -65,7 +64,7 @@ def _input_fn(
     dataset = data_accessor.tf_dataset_factory(
         file_pattern,
         dataset_options.TensorFlowDatasetOptions(
-            batch_size=batch_size, label_key=transformed_name(LABEL_KEY)
+            batch_size=batch_size, label_key=transformed_name(LABEL_KEY), shuffle=is_train
         ),
         tf_transform_output.transformed_metadata.schema,
     )
@@ -95,7 +94,13 @@ def run_fn(fn_args: FnArgs):
         transformed_name(IMAGE_KEY), transformed_name(LABEL_KEY), NUM_LABELS
     )
 
-    model.fit(train_dataset, validation_data=eval_dataset, epochs=EPOCHS)
+    model.fit(
+        train_dataset,
+        steps_per_epoch=fn_args.train_steps,
+        validation_data=eval_dataset,
+        validation_steps=fn_args.eval_steps,
+        epochs=EPOCHS,
+    )
 
     model.save(
         fn_args.serving_model_dir,
