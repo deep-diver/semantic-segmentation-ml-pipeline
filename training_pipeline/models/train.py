@@ -3,7 +3,6 @@ from typing import List
 import absl
 import tensorflow as tf
 import tensorflow_transform as tft
-from tensorflow.keras.optimizers import Adam
 from tfx.components.trainer.fn_args_utils import DataAccessor, FnArgs
 from tfx_bsl.tfxio import dataset_options
 
