@@ -17,6 +17,7 @@ def run():
             pipeline_name=configs.PIPELINE_NAME,
             pipeline_root=configs.PIPELINE_ROOT,
             data_path=configs.DATA_PATH,
+            schema_path=configs.SCHEMA_PATH,
             modules={
                 "training_fn": configs.TRAINING_FN,
                 "preprocessing_fn": configs.PREPROCESSING_FN,
