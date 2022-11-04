@@ -14,7 +14,6 @@ from tfx.components import Trainer
 from tfx.components import Transform
 from tfx.components import Evaluator
 from tfx.components import Pusher
-from tfx.components import ImportSchemaGen
 from tfx.orchestration import pipeline
 from tfx.proto import example_gen_pb2
 from tfx.proto import trainer_pb2
@@ -53,7 +52,7 @@ def create_pipeline(
     statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
     components.append(statistics_gen)
 
-    schema_gen = ImportSchemaGen(schema_file=schema_path)
+    schema_gen = tfx.components.ImportSchemaGen(schema_file=schema_path)
     components.append(schema_gen)
 
     transform = Transform(

@@ -6,7 +6,6 @@ from tfx import v1 as tfx
 from tfx.components import (
     Evaluator,
     ImportExampleGen,
-    ImportSchemaGen,
     StatisticsGen,
     Transform,
 )
@@ -63,7 +62,7 @@ def create_pipeline(
     statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
     components.append(statistics_gen)
 
-    schema_gen = ImportSchemaGen(schema_file=schema_path)
+    schema_gen = tfx.components.ImportSchemaGen(schema_file=schema_path)
     components.append(schema_gen)
 
     # Apply any preprocessing. Transformations get saved as a graph in a SavedModel.
