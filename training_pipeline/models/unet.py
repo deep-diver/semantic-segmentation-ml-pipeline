@@ -1,8 +1,6 @@
 import tensorflow as tf
-import tensorflow_transform as tft
-from tensorflow.keras.optimizers import Adam
 
-from .hyperparams import INPUT_IMG_SIZE, LR
+from .hyperparams import INPUT_IMG_SIZE
 
 """
     _build_model builds a UNET model. The implementation codes are
@@ -65,7 +63,7 @@ def build_model(input_name, label_name, num_labels) -> tf.keras.Model:
 
     model = tf.keras.Model(inputs=inputs, outputs=x)
     model.compile(
-        optimizer=Adam(learning_rate=LR),
+        optimizer="adam",
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         # by suppling "accuracy", Keras will automatically infer the appropriate variant.
         # in this case, sparse_categorical_accuracy will be chosen.

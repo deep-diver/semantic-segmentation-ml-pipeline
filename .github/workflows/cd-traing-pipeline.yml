@@ -14,7 +14,7 @@ on:
       pipelineName:
         description: 'TFX Pipeline Name to Trigger'
         required: true
-        default: 'segformer-training-pipeline'
+        default: 'segmentation-training-pipeline'
       fullResolutionData:
         description: 'use the full resolution data, dataflow'
         required: true
