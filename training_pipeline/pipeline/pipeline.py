@@ -117,7 +117,7 @@ def create_pipeline(
     # Push the blesses model to HF hub and deploy a demo app on Hugging Face
     # Spaces.
     hf_pusher_args["model"] = trainer.outputs["model"]
-    # hf_pusher_args["model_blessing"] = evaluator.outputs["blessing"]
+    hf_pusher_args["model_blessing"] = evaluator.outputs["blessing"]
     hf_pusher = HFPusher(**hf_pusher_args)
     components.append(hf_pusher)
 
