@@ -59,6 +59,6 @@ feature {
   }
 
   shape {
-    dim { size: 3 }
+    dim { size: 2 }
   }
 }
