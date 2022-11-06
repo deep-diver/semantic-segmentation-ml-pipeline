@@ -25,7 +25,7 @@ OUTPUT_DIR = os.path.join("gs://", GCS_BUCKET_NAME)
 PIPELINE_ROOT = os.path.join(OUTPUT_DIR, "tfx_pipeline_output", PIPELINE_NAME)
 
 DATA_PATH = "gs://pets-tfrecords/pets-tfrecords/"
-SCHEMA_PATH = "pipeline/schema.pbtxt"
+SCHEMA_PATH = "pipeline/schema.pbtxt" # GCS path is also allowed
 
 PREPROCESSING_FN = "models.preprocessing.preprocessing_fn"
 TRAINING_FN = "models.train.run_fn"
