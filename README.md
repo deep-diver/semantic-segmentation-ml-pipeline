@@ -4,7 +4,7 @@
 # Semantic Sementation model within ML pipeline
 
 <p align="center">
-  <img src="https://i.ibb.co/fXyc2TT/preview.png" width="70%" />
+  <img src="https://i.ibb.co/7kF5kCK/semantic-seg-overview.png" width="80%" />
 </p>
 
 This repository shows how to build a Machine Learning Pipeline for [Semantic Segmentation task](https://paperswithcode.com/task/semantic-segmentation) with [TensorFlow Extended(TFX)](https://www.tensorflow.org/tfx) and various GCP products such as [Vertex Pipeline](https://cloud.google.com/vertex-ai/docs/pipelines), [Vertex Training](https://cloud.google.com/vertex-ai/docs/training/custom-training), [Vertex Endpoint](https://cloud.google.com/vertex-ai/docs/predictions/deploy-model-api). Also, the ML pipeline contains few custom components integrated with 🤗 Hub. `HFModelPusher` pushes trained model to 🤗 Model Repositry, and `HFSpacePusher` creates a `Gradio` application with latest model out of the box.
