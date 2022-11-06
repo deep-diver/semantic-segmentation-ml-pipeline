@@ -89,26 +89,26 @@ def create_pipeline(
     components.append(trainer)
 
     # Resolver component - did we do better than the previous model?
-    # model_resolver = resolver.Resolver(
-    #     strategy_class=LatestBlessedModelResolver,
-    #     model=Channel(type=Model),
-    #     model_blessing=Channel(type=ModelBlessing),
-    # ).with_id("latest_blessed_model_resolver")
-    # components.append(model_resolver)
+    model_resolver = resolver.Resolver(
+        strategy_class=LatestBlessedModelResolver,
+        model=Channel(type=Model),
+        model_blessing=Channel(type=ModelBlessing),
+    ).with_id("latest_blessed_model_resolver")
+    components.append(model_resolver)
 
     # Evaluate the model.
-    # evaluator = Evaluator(
-    #     examples=example_gen.outputs["examples"],
-    #     model=trainer.outputs["model"],
-    #     baseline_model=model_resolver.outputs["model"],
-    #     eval_config=eval_configs,
-    # )
-    # components.append(evaluator)
+    evaluator = Evaluator(
+        examples=example_gen.outputs["examples"],
+        model=trainer.outputs["model"],
+        baseline_model=model_resolver.outputs["model"],
+        eval_config=eval_configs,
+    )
+    components.append(evaluator)
 
     # Based on blessing status, push the model to prod (deployment stage.)
     pusher_args = {
         "model": trainer.outputs["model"],
-        # "model_blessing": evaluator.outputs["blessing"],
+        "model_blessing": evaluator.outputs["blessing"],
         "custom_config": ai_platform_serving_args,
     }
     pusher = VertexPusher(**pusher_args)  # pylint: disable=unused-variable
@@ -117,7 +117,7 @@ def create_pipeline(
     # Push the blesses model to HF hub and deploy a demo app on Hugging Face
     # Spaces.
     hf_pusher_args["model"] = trainer.outputs["model"]
-    # hf_pusher_args["model_blessing"] = evaluator.outputs["blessing"]
+    hf_pusher_args["model_blessing"] = evaluator.outputs["blessing"]
     hf_pusher = HFPusher(**hf_pusher_args)
     components.append(hf_pusher)
 
