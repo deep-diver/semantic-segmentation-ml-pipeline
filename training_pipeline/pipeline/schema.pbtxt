@@ -1,5 +1,11 @@
+# find which messages are supported from the official TensorFlow Metadata repository
+# at https://github.com/tensorflow/metadata/blob/master/tensorflow_metadata/proto/v0/schema.proto
+#
+# For starters, you can find some beginner friendly information in TFX official tutorial
+# at https://www.tensorflow.org/tfx/guide/schemagen
+
 feature {
-  name: "image"
+  name: "image" 
   type: FLOAT
 
   presence {
