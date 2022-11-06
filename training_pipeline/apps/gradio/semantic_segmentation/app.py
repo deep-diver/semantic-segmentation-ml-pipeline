@@ -9,13 +9,12 @@ MODEL = from_pretrained_keras(MODEL_CKPT)
 
 RESOLTUION = 128
 
-RESOLTUION = 128
-
-ADE_PALETTE = []
+PETS_PALETTE = []
 with open(r"./palette.txt", "r") as fp:
     for line in fp:
-        tmp_list = list(map(int, line[:-1].strip("][").split(", ")))
-        ADE_PALETTE.append(tmp_list)
+        if "#" not in line:
+            tmp_list = list(map(int, line[:-1].strip("][").split(", ")))
+            PETS_PALETTE.append(tmp_list)
 
 
 def preprocess_input(image: Image) -> tf.Tensor:
@@ -36,7 +35,7 @@ def get_seg_overlay(image, seg):
     color_seg = np.zeros(
         (seg.shape[0], seg.shape[1], 3), dtype=np.uint8
     )  # height, width, 3
-    palette = np.array(ADE_PALETTE)
+    palette = np.array(PETS_PALETTE)
 
     for label, color in enumerate(palette):
         color_seg[seg == label, :] = color
@@ -71,7 +70,7 @@ def get_predictions(image: Image):
 
 
 title = (
-    "Simple demo for a semantic segmentation model trained on the Sidewalks dataset."
+    "Simple demo for a semantic segmentation model trained on the PETS dataset to classify inside, outside, and border of an object."
 )
 
 description = """
@@ -88,7 +87,7 @@ demo = gr.Interface(
     allow_flagging="never",
     title=title,
     description=description,
-    examples=[["test-image.jpg"]],
+    examples=[["test-image1.png"], ["test-image2.png"], ["test-image3.png"], ["test-image4.png"], ["test-image5.png"]],
 )
 
 demo.launch()

@@ -9,7 +9,6 @@ from tfx.proto import example_gen_pb2
 import absl
 import tensorflow_model_analysis as tfma
 from tfx.components import ImportExampleGen
-from tfx.components import SchemaGen
 from tfx.components import StatisticsGen
 from tfx.components import Trainer
 from tfx.components import Transform
@@ -31,6 +30,7 @@ def create_pipeline(
     pipeline_name: Text,
     pipeline_root: Text,
     data_path: Text,
+    schema_path: Text,
     modules: Dict[Text, Text],
     train_args: trainer_pb2.TrainArgs,
     eval_args: trainer_pb2.EvalArgs,
@@ -52,7 +52,7 @@ def create_pipeline(
     statistics_gen = StatisticsGen(examples=example_gen.outputs["examples"])
     components.append(statistics_gen)
 
-    schema_gen = SchemaGen(statistics=statistics_gen.outputs["statistics"])
+    schema_gen = tfx.components.ImportSchemaGen(schema_file=schema_path)
     components.append(schema_gen)
 
     transform = Transform(
