@@ -86,7 +86,7 @@ demo = gr.Interface(
     allow_flagging="never",
     title=title,
     description=description,
-    examples=[["test-image1.png"], ["test-image2.png"]],
+    examples=[["test-image1.png"], ["test-image2.png"], ["test-image3.png"], ["test-image4.png"], ["test-image5.png"]],
 )
 
 demo.launch()
