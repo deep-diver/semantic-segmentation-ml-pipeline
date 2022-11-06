@@ -70,7 +70,7 @@ def get_predictions(image: Image):
 
 
 title = (
-    "Simple demo for a semantic segmentation model trained on the Sidewalks dataset."
+    "Simple demo for a semantic segmentation model trained on the PETS dataset to classify inside, outside, and border of an object."
 )
 
 description = """
