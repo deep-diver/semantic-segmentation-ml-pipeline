@@ -12,8 +12,9 @@ RESOLTUION = 128
 PETS_PALETTE = []
 with open(r"./palette.txt", "r") as fp:
     for line in fp:
-        tmp_list = list(map(int, line[:-1].strip("][").split(", ")))
-        PETS_PALETTE.append(tmp_list)
+        if "#" not in line:
+            tmp_list = list(map(int, line[:-1].strip("][").split(", ")))
+            PETS_PALETTE.append(tmp_list)
 
 
 def preprocess_input(image: Image) -> tf.Tensor:

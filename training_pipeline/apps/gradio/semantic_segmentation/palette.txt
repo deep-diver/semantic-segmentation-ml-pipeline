@@ -1,3 +1,6 @@
+# 0 for outer object
+# 1 for inner object
+# 2 for object border
 [0, 10, 146]
 [38, 0, 44]
 [255, 232, 0]
