@@ -5,7 +5,7 @@ import tensorflow_transform as tft
 from tensorflow.keras.applications import mobilenet_v2
 
 from .utils import transformed_name
-from .common import LABEL_KEY, CONCRETE_INPUT
+from .common import IMAGE_KEY, LABEL_KEY, CONCRETE_INPUT
 from .hyperparams import INPUT_IMG_SIZE
 
 
