@@ -7,11 +7,32 @@
   <img src="https://i.ibb.co/7kF5kCK/semantic-seg-overview.png" width="80%" />
 </p>
 
-This repository shows how to build a Machine Learning Pipeline for [Semantic Segmentation task](https://paperswithcode.com/task/semantic-segmentation) with [TensorFlow Extended(TFX)](https://www.tensorflow.org/tfx) and various GCP products such as [Vertex Pipeline](https://cloud.google.com/vertex-ai/docs/pipelines), [Vertex Training](https://cloud.google.com/vertex-ai/docs/training/custom-training), [Vertex Endpoint](https://cloud.google.com/vertex-ai/docs/predictions/deploy-model-api). Also, the ML pipeline contains few custom components integrated with 🤗 Hub. `HFModelPusher` pushes trained model to 🤗 Model Repositry, and `HFSpacePusher` creates a `Gradio` application with latest model out of the box.
+This repository shows how to build a Machine Learning Pipeline for [Semantic Segmentation](https://paperswithcode.com/task/semantic-segmentation) with [TensorFlow Extended (TFX)](https://www.tensorflow.org/tfx) and various GCP products such as [Vertex Pipeline](https://cloud.google.com/vertex-ai/docs/pipelines), [Vertex Training](https://cloud.google.com/vertex-ai/docs/training/custom-training), [Vertex Endpoint](https://cloud.google.com/vertex-ai/docs/predictions/deploy-model-api). Also, the ML pipeline contains a custom TFX component that is integrated with Hugging Face 🤗 Hub - `HFPusher`. `HFPusher` pushes a trained model to 🤗 Model Hub and, optionally `Gradio` application to 🤗 Space Hub with the latest model out of the box.
 
-**NOTE**: We use U-NET based TensorFlow model from the [official tutorial](https://www.tensorflow.org/tutorials/images/segmentation). Since we implement an ML pipeline, U-NET like model could be a good starting point. Other SOTA models like [SegFormer from 🤗 `Transformers`](https://huggingface.co/transformers/v4.12.5/model_doc/segformer.html) will be explored later.
+**NOTE**: We use U-NET based TensorFlow model from the [official tutorial](https://www.tensorflow.org/tutorials/images/segmentation). Since we implement an ML pipeline, U-NET like model could be a good starting point. Other SOTA models like [SegFormer from 🤗 `Transformers`](https://huggingface.co/transformers/v4.12.5/model_doc/segformer.html) or [DeepLabv3+](https://keras.io/examples/vision/deeplabv3_plus/) will be explored later.
 
 **NOTE**: The aim of this project is not to serve a fully fine-tuned model. Our main focus is to demonstrate how to build ML pipeline for semantic segmentation task instead.
+
+# Project structure
+
+
+```bash
+project
+│
+└───notebooks
+│   │   gradio_demo.ipynb 
+│   │   inference_from_SavedModel.ipynb # test inference w/ Vertex Endpoint
+│   │   parse_tfrecords_pets.ipynb # test TFRecord parsing
+│   │   tfx_pipeline.ipynb # build TFX pipeline within a notebook
+│
+└───tfrecords
+│   │   create_tfrecords_pets.py # script to create TFRecords of PETS dataset
+│
+└───training_pipeline
+    └───apps # Gradio app template codebase    
+    └───models # contains files related to model    
+    └───pipeline # definition of TFX pipeline
+```
 
 # Instructions
 
@@ -55,14 +76,13 @@ Or, you can use `workflow_dispatch` feature of GitHub Action. In this case, go t
 
 - [X] Notebook to prepare input dataset in `TFRecord` format
 - [X] Upload the input dataset into the GCS bucket
-- [X] Modify [modeling part](https://github.com/deep-diver/segformer-in-ml-pipeline/blob/main/training_pipeline/models/model.py) to train TensorFlow based Unet model.
-- [X] Modify [Gradio app part](https://github.com/deep-diver/segformer-in-ml-pipeline/tree/main/training_pipeline/apps/gradio/semantic_segmentation). Initial version is copied from [segformer-tf-transformers](https://github.com/deep-diver/segformer-tf-transformers) repository.
-- [X] Modify [Pipeline part](https://github.com/deep-diver/segformer-in-ml-pipeline/blob/main/training_pipeline/pipeline/pipeline.py) to include essential TFX components, `ImportExampleGen`, `Trainer`, and `Pusher`. 
-- [X] Modify [configs.py](https://github.com/deep-diver/segformer-in-ml-pipeline/blob/main/training_pipeline/pipeline/configs.py) to reflect changes.
-- [X] Modify [Pipeline part](https://github.com/deep-diver/segformer-in-ml-pipeline/blob/main/training_pipeline/pipeline/pipeline.py) to add 🤗 related components, `HFModelPusher` and `HFSpacePusher`.
-- [X] (Optional) Integrate `Dataflow` in `ImportExampleGen` to handle a large amount of dataset.
-- [ ] (Optional) Add custom TFX component to dynamically inject hyperameters to search with `Tuner`.
-- [ ] (Optional) Add additional Service Account Key as a GitHub Action Secret if collaborators want to run ML pipeline on the GCP with their own GCP account. Each word of the secret key should be separated with underscore. For example, `GCP-ML-172005` should be `GCP_ML_172005`.
+- [X] Implement and include [UNet](https://www.tensorflow.org/tutorials/images/segmentation) model in the pipeline
+- [X] Implement Gradio app template
+- [X] Make a complete TFX pipeline with `ExampleGen`, `SchemaGen`, `Resolver`, `Trainer`, `Evaluator`, and `Pusher` components
+- [X] Add necessary configurations to the [configs.py](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/blob/main/training_pipeline/pipeline/configs.py)
+- [X] Add `HFPusher` component to the TFX pipeline
+- [X] Replace `SchemaGen` with `ImportSchemaGen` for better TFRecords parsing capability
+- [X] (Optional) Integrate `Dataflow` in `ImportExampleGen` to handle a large amount of dataset. This feature is included in the code as a reference, but it is not used after we switched the Sidewalk to PETS dataset.
 
 ## Acknowledgements
 
