@@ -1,4 +1,9 @@
-Files in `notebooks` contains Jupyter Notebooks showing some of the verifications of a part of work of the entire workflow. All files could be categorized in two based on the different datasets. This is because we have verified ML pipeline based on [Sidewalk Dataset](https://huggingface.co/datasets/segments/sidewalk-semantic) first, and moved to [Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/) later.
+Files in `notebooks` contains Jupyter Notebooks showing some of the verifications of a part of work of the entire workflow. All files could be categorized in two based on the dataset being used. 
+
+In this project, we used two different datasets for validation purposes:
+
+* [Sidewalk Dataset](https://huggingface.co/datasets/segments/sidewalk-semantic)
+* [Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/)
 
 ### Jupyter Notebooks for handling Oxford-IIIT Pet Dataset
 
