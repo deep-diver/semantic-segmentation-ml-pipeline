@@ -11,7 +11,7 @@ This repository shows how to build a Machine Learning Pipeline for [Semantic Seg
 
 **NOTE**: We use U-NET based TensorFlow model from the [official tutorial](https://www.tensorflow.org/tutorials/images/segmentation). Since we implement an ML pipeline, U-NET like model could be a good starting point. Other SOTA models like [SegFormer from 🤗 `Transformers`](https://huggingface.co/transformers/v4.12.5/model_doc/segformer.html) or [DeepLabv3+](https://keras.io/examples/vision/deeplabv3_plus/) will be explored later.
 
-**NOTE**: The aim of this project is not to serve a fully fine-tuned model. Our main focus is to demonstrate how to build ML pipeline for semantic segmentation task instead.
+**NOTE**: The aim of this project is not to serve the most SoTA segmentation model. Our main focus is to demonstrate how to build an end-to-end ML pipeline for semantic segmentation task instead.
 
 # Project structure
 
@@ -33,6 +33,9 @@ project
     └───models # contains files related to model    
     └───pipeline # definition of TFX pipeline
 ```
+
+Inside `training_pipeline` the entrypoints for the pipeline runners are defined in
+`kubeflow_runner.py` and `local_runner.py`.
 
 # Instructions
 
@@ -72,6 +75,10 @@ Or, you can use `workflow_dispatch` feature of GitHub Action. In this case, go t
 
 ![](https://i.ibb.co/MkTWLZS/dispatch.png)
 
+## Using GitHub Actions
+
+TBA
+
 # To-do
 
 - [X] Notebook to prepare input dataset in `TFRecord` format
@@ -83,6 +90,21 @@ Or, you can use `workflow_dispatch` feature of GitHub Action. In this case, go t
 - [X] Add `HFPusher` component to the TFX pipeline
 - [X] Replace `SchemaGen` with `ImportSchemaGen` for better TFRecords parsing capability
 - [X] (Optional) Integrate `Dataflow` in `ImportExampleGen` to handle a large amount of dataset. This feature is included in the code as a reference, but it is not used after we switched the Sidewalk to PETS dataset.
+
+## Misc notes
+
+### On the use of two different datasets
+
+Initially, we started our work with the [Sidewalks dataset](https://huggingface.co/datasets/segments/sidewalk-semantic). This
+dataset contains different stuff and things and is also very high-resolution in nature. To keep the runtime of our pipeline
+faster and to experiment quicker, we settled with a shallow UNet architecture (from [this tutorial](https://www.tensorflow.org/tutorials/images/segmentation)). This is why, we also downsampled the Sidewalks dataset quite a bit (128x128, 256x256, etc.). But this 
+led to poor quality models. 
+
+To circumvent around this, we used the [PETS dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/) where the effects of downsampling
+weren't that visible compared to Sidewalks. 
+
+But do note that the approaches showcases in our pipeline can easily be extended to high-resolution segmentation datasets and different
+model architectures (as long as they can be serialized as a `SavedModel`).
 
 ## Acknowledgements
 
