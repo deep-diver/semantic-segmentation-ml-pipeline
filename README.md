@@ -71,13 +71,13 @@ $ tfx run create --pipeline-name=segformer-training-pipeline \
                  --regeion=$GCP_REGION
 ```
 
-Or, you can use `workflow_dispatch` feature of GitHub Action. In this case, go to the action tab, then select `Trigger Training Pipeline` on the left pane, then `Run workflow` on the branch of your choice. The GCP project ID in the input parameters will automatically replace the `GOOGLE_CLOUD_PROJECT` in `training_pipeline/pipeline/configs.py`. Also it will be injected to the `tfx run create` CLI.
+## Using GitHub Actions
+
+You can use `workflow_dispatch` feature of GitHub Action to run the pipeline on Vertex AI environment as well. In this case, go to the action tab, then select `Trigger Training Pipeline` on the left pane, then `Run workflow` on the branch of your choice. The GCP project ID in the input parameters will automatically replace the `GOOGLE_CLOUD_PROJECT` in `training_pipeline/pipeline/configs.py`. Also it will be injected to the `tfx run create` CLI.
 
 ![](https://i.ibb.co/MkTWLZS/dispatch.png)
 
-## Using GitHub Actions
-
-TBA
+For further understading about how GitHub Action is implemented, please refer to [its README document](.github/workflows/README.md).
 
 # To-do
 

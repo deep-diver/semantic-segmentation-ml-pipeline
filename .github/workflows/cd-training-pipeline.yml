@@ -15,7 +15,7 @@ on:
         description: 'TFX Pipeline Name to Trigger'
         required: true
         default: 'segmentation-training-pipeline'
-      fullResolutionData:
+      enableDataflow:
         description: 'use the full resolution data, dataflow'
         required: true
         default: 'false'
@@ -78,9 +78,9 @@ jobs:
     - name: 'Create TFX Training Pipeline'
       working-directory: 'training_pipeline'
       env:
-        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}
+        ENABLE_DATAFLOW: ${{ github.event.inputs.enableDataflow }}
       run: |
-        FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
+        ENABLE_DATAFLOW=${{ env.ENABLE_DATAFLOW }} \
         tfx pipeline create \
           --pipeline-path kubeflow_runner.py \
           --engine vertex \
@@ -89,9 +89,9 @@ jobs:
     - name: 'Compile TFX Training Pipeline'
       working-directory: 'training_pipeline'
       env:
-        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
+        ENABLE_DATAFLOW: ${{ github.event.inputs.enableDataflow }}      
       run: |
-        FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
+        ENABLE_DATAFLOW=${{ env.ENABLE_DATAFLOW }} \
         tfx pipeline compile \
           --pipeline-path kubeflow_runner.py \
           --engine vertex
@@ -99,9 +99,9 @@ jobs:
     - name: 'Run TFX Training Pipeline'
       working-directory: 'training_pipeline'
       env:
-        FULL_RES_DATA: ${{ github.event.inputs.fullResolutionData }}      
+        ENABLE_DATAFLOW: ${{ github.event.inputs.enableDataflow }}      
       run: |
-          FULL_RES_DATA=${{ env.FULL_RES_DATA }} \
+          ENABLE_DATAFLOW=${{ env.ENABLE_DATAFLOW }} \
           tfx run create \
             --engine vertex \
             --pipeline-name ${{ github.event.inputs.pipelineName }} \
