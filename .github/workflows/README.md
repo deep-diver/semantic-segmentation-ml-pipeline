@@ -1,6 +1,6 @@
 There are two GitHub Action pipelines for [Continuous Integration(CI)](ci.yml) and [Continuous Deployment(CD)](cd-training-pipeline.yml) of the ML pipeline on Vertex AI environment. 
 
-**CI**: This is to verify the proposed changes of the pipeline by creating and compiling through [TFX CLI](https://www.tensorflow.org/tfx/guide/cli). Specifically, `tfx pipeline create` and `tfx pipeline compile` returns errors if the codes of the pipeline has import/syntax problems. 
+**CI**: This is to verify the proposed changes of the pipeline by creating and compiling through the [TFX CLI](https://www.tensorflow.org/tfx/guide/cli). Specifically, `tfx pipeline create` and `tfx pipeline compile` will error out if the given pipeline code has import/syntax problems. 
 You can also _run_ the pipeline locally with `tfx run create`. However, in this case, you need to consider the code structure to be able to set the number of epochs and datasets differently. You certainly don't want to run the pipeline over for a larger number of epochs and on the full dataset since the purpose of CI is to check if there is no problem.
 
 **CD**: This runs the pipeline on Vertex AI environment. In order to give more flexibility, it leverages the `workflow_dispatch` feature of GitHub Action which allows you to set some parameters manually via GitHub Action UI. In this project, there are four parameters as below(`gcpProject`, `gcpRegion`, and `pipelineName` are used in `tfx run create` TFX CLI):
