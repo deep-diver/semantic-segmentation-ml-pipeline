@@ -32,12 +32,6 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-#     - name: 'Unit Test'
-#       if: steps.training-pipeline-change.outputs.src == 'true'    
-#       working-directory: 'training_pipeline'
-#       run: | 
-#         pytest -m . -W ignore::DeprecationWarning
-
     - name: 'Compile TFX Training Pipeline'
       if: steps.training-pipeline-change.outputs.src == 'true'    
       working-directory: 'training_pipeline'
