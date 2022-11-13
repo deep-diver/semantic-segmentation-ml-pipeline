@@ -1,5 +1,5 @@
 ![Python](https://img.shields.io/badge/python-3.9-blue.svg) [![TFX](https://img.shields.io/badge/TFX-1.9.1-orange)](https://www.tensorflow.org/tfx)
-[![Validity Check for Training Pipeline](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/ci.yml) [![Trigger Training Pipeline](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/cd-traing-pipeline.yml/badge.svg)](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/cd-traing-pipeline.yml)
+[![Validity Check for Training Pipeline](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/ci.yml) [![Trigger Training Pipeline](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/cd-training-pipeline.yml/badge.svg)](https://github.com/deep-diver/semantic-segmentation-ml-pipeline/actions/workflows/cd-training-pipeline.yml)
 
 # Semantic Sementation model within ML pipeline
 
