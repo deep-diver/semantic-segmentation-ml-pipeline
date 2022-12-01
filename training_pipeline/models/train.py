@@ -107,6 +107,9 @@ def run_fn(fn_args: FnArgs):
         save_format="tf",
         signatures={
             "serving_default": model_exporter(model),
+            "transform_features": transform_features_signature(
+                model, tf_transform_output
+            ),            
             "from_examples": tf_examples_serving_signature(model, tf_transform_output),
         },
     )
