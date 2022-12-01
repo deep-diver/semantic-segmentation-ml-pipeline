@@ -133,10 +133,8 @@ def tf_examples_serving_signature(model, tf_transform_output):
     ) -> Dict[str, tf.Tensor]:
         feature_spec = tf_transform_output.raw_feature_spec()
         parsed_features = tf.io.parse_example(serialized_tf_example, feature_spec)
-        
-        transformed_features = model.tft_layer(parsed_features)
 
-        outputs = model(transformed_features)
+        outputs = model(parsed_features)
 
         return {transformed_name(LABEL_KEY): outputs}
 
