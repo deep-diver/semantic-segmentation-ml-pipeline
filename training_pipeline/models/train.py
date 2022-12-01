@@ -64,7 +64,7 @@ def _input_fn(
     dataset = data_accessor.tf_dataset_factory(
         file_pattern,
         dataset_options.TensorFlowDatasetOptions(
-            batch_size=batch_size, label_key=transformed_name(LABEL_KEY), shuffle=is_train
+            batch_size=batch_size, label_key=LABEL_KEY, shuffle=is_train
         ),
         tf_transform_output.transformed_metadata.schema,
     )
