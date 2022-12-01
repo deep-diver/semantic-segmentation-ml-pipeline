@@ -75,7 +75,6 @@ EVAL_CONFIGS = tfma.EvalConfig(
             # are defined in the `signatures` parameter when model.save()
             # you can find how it is done in models/train.py
             signature_name="from_examples",
-            preprocessing_function_names=["transform_features"],
             label_key="label_xf",
             prediction_key="label_xf",
         )
