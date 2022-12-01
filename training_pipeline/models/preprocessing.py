@@ -15,7 +15,7 @@ def preprocessing_fn(inputs):
 
     image_features = mobilenet_v2.preprocess_input(inputs[IMAGE_KEY])
 
-    outputs[transformed_name(IMAGE_KEY)] = image_features
-    outputs[transformed_name(LABEL_KEY)] = inputs[LABEL_KEY]
+    outputs[IMAGE_KEY] = image_features
+    outputs[LABEL_KEY] = inputs[LABEL_KEY]
 
     return outputs
