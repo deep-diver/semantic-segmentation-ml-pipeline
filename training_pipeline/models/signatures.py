@@ -33,7 +33,7 @@ def _serving_preprocess_fn(string_input):
     decoded_images = tf.map_fn(
         _serving_preprocess, string_input, dtype=tf.float32, back_prop=False
     )
-    return {transformed_name(IMAGE_KEY): decoded_images}
+    return {IMAGE_KEY: decoded_images}
 
 
 def model_exporter(model: tf.keras.Model):
@@ -47,7 +47,7 @@ def model_exporter(model: tf.keras.Model):
         tf.TensorSpec(
             shape=[None, INPUT_IMG_SIZE, INPUT_IMG_SIZE, 3],
             dtype=tf.float32,
-            name=transformed_name(IMAGE_KEY),
+            name=IMAGE_KEY,
         )
     )
 
@@ -136,6 +136,6 @@ def tf_examples_serving_signature(model, tf_transform_output):
 
         outputs = model(parsed_features)
 
-        return {transformed_name(LABEL_KEY): outputs}
+        return {LABEL_KEY: outputs}
 
     return serve_tf_examples_fn
