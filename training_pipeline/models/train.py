@@ -91,7 +91,7 @@ def run_fn(fn_args: FnArgs):
         batch_size=EVAL_BATCH_SIZE,
     )
     model = build_model(
-        transformed_name(IMAGE_KEY), transformed_name(LABEL_KEY), NUM_LABELS
+        IMAGE_KEY, LABEL_KEY, NUM_LABELS
     )
 
     model.fit(
