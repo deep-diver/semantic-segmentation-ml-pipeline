@@ -104,8 +104,15 @@ def _replace_placeholders(
 
 
 def _replace_files(src_path, dst_path):
-    """replace the contents(files/folders) of the repository with the
-    latest contents"""
+    """Replace the contents(files/folders) of the repository with the
+    latest contents.
+
+    Args:
+        src_path (path or str): Path of the source repository where latest
+        content exists.
+        dst_path (path or str): Path to the destination repository that
+        contains old files.
+    """
 
     not_to_delete = [".gitattributes", ".git"]
 
@@ -135,8 +142,15 @@ def _replace_files(src_path, dst_path):
 def _create_remote_repo(
     access_token: str, repo_id: str, repo_type: str = "model", space_sdk: str = None
 ):
-    """create a remote repository on HuggingFace Hub platform. HTTPError
-    exception is raised when the repository already exists"""
+    """Create a remote repository on HuggingFace Hub platform. HTTPError
+    exception is raised when the repository already exists
+
+    Args:
+        access_token (str): Hugging Face Hub token with write access.
+        repo_id (str): Repository ID to push the repository.
+        repo_type (str, optional): Repository type. Defaults to "model".
+        space_sdk (str, optional): SDK for Space. Defaults to None.
+    """
 
     logging.info(f"repo_id: {repo_id}")
     try:
@@ -168,7 +182,13 @@ def _clone_and_checkout(
 
 
 def _push_to_remote_repo(repo: Repository, commit_msg: str, branch: str = "main"):
-    """push any changes to the remote repository"""
+    """Push any changes to the remote repository
+
+    Args:
+        repo (Repository): Repository class from huggingface_hub.
+        commit_msg (str): Commit message.
+        branch (str, optional): Branch to push the model. Defaults to "main".
+    """
 
     repo.git_add(pattern=".", auto_lfs_track=True)
     repo.git_commit(commit_message=commit_msg)
@@ -220,6 +240,15 @@ def deploy_model_for_hf_hub(
         push the updated repository to the remote Space Hub. note that the br
         anch is always set to "main", so that HuggingFace Space could build t
         he application automatically when pushed.
+    
+    Args:
+        username (str): Hugging Face Hub username.
+        access_token (str): Hugging Face Hub access token.
+        repo_name (str): Name of the repository.
+        model_path (str): Path to model file.
+        model_version (str): Model version.
+        space_config (dict): Configuration for Space.
+
     """
     outputs = {}
 
@@ -253,7 +282,7 @@ def deploy_model_for_hf_hub(
     # step 1-4
     _push_to_remote_repo(
         repo=repository,
-        commit_msg=f"updload new version({model_version})",
+        commit_msg=f"upload new version({model_version})",
         branch=model_version,
     )
     logging.info("updates are pushed to the remote repository")
