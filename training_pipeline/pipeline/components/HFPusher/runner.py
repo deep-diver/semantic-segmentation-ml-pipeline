@@ -23,6 +23,8 @@ import tempfile
 import tensorflow as tf
 from absl import logging
 from tfx.utils import io_utils
+from model_card import create_card
+from pathlib import Path
 
 from huggingface_hub import Repository
 from huggingface_hub import HfApi
@@ -202,6 +204,9 @@ def deploy_model_for_hf_hub(
     model_path: str,
     model_version: str,
     space_config: Optional[Dict[Text, Any]] = None,
+    model_metadata: Optional[Dict] = None,
+    **template_kwargs,
+
 ) -> Dict[str, str]:
     """Executes ML model deployment workflow to HuggingFace Hub. Refer to the
     HFPusher component in component.py for generic description of each parame
@@ -217,7 +222,9 @@ def deploy_model_for_hf_hub(
     step 1-3.
         remove every files under the cloned repository(local), and copies the
         model related files to the cloned local repository path.
-    step 1-4.
+    step 1-4
+        write model card.
+    step 1-5.
         push the updated repository to the given branch of remote Model Hub.
 
     step 2. push application to the Space Hub
@@ -230,7 +237,7 @@ def deploy_model_for_hf_hub(
         his process ensures every necessary files are located in the local fil
         e system.
     step 2-3.
-        replacek speical tokens in every files under the given directory.
+        replace speical tokens in every files under the given directory.
     step 2-4.
         clone the created or existing remote repository to the local path.
     step 2-5.
@@ -248,6 +255,8 @@ def deploy_model_for_hf_hub(
         model_path (str): Path to model file.
         model_version (str): Model version.
         space_config (dict): Configuration for Space.
+        model_metadata (dict): Metadata for model card.
+        
 
     """
     outputs = {}
@@ -280,6 +289,12 @@ def deploy_model_for_hf_hub(
     )
 
     # step 1-4
+    card = create_card(model_metadata, **{template_kwargs, "model_id":_MODEL_REPO_KEY})
+
+    with open(Path(local_path) / "README.md", "w+") as fp:
+        fp.write(str(card))
+
+    # step 1-5
     _push_to_remote_repo(
         repo=repository,
         commit_msg=f"upload new version({model_version})",
