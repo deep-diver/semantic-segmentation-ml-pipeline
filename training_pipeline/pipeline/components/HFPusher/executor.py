@@ -78,16 +78,16 @@ class Executor(tfx_pusher_executor.Executor):
             - space_config: space_config carries additional values such as:
               - app_path : path where the application templates are in the cont
                 ainer that runs the TFX pipeline. This is expressed either apps.
-                gradio.img_classifier or apps/gradio.img_classifier.
+                `gradio.img_classifier` or `apps/gradio.img_classifier`.
               - repo_name : the repository name to push the application to. The
                 default value is same as the TFX pipeline name
               - space_sdk : either gradio or streamlit. this will decide which a
                 pplication framework to be used for the Space repository. The de
                 fault value is gradio
               - placeholders : dictionary which placeholders to replace with mod
-                el specific information. The keys represents describtions, and t
+                el specific information. The keys represents descriptions, and t
                 he values represents the actual placeholders to replace in the f
-                iles under the app_path. There are currently two predefined keys,
+                iles under the `app_path`. There are currently two predefined keys,
                 and if placeholders is set to None, the default values will be used.
         """
         self._log_startup(input_dict, output_dict, exec_properties)
