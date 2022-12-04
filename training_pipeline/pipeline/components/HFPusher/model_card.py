@@ -7,7 +7,7 @@ def create_card(card_data, template_path, model_metadata,
 
     Args:
         model_metadata (dict): Dict of card metadata.
-        see here for what you can pass to the metadata section:
+        Refer to the link to know what you can pass to the metadata section:
         https://github.com/huggingface/huggingface_hub/blob/main/src/huggingface_hub/templates/modelcard_template.md
 
     Returns:
