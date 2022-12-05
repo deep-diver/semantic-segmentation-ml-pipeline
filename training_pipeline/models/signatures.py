@@ -74,7 +74,7 @@ def model_exporter(model: tf.keras.Model):
 
 
 def transform_features_signature(
-    model: tf.keras.Model, tf_transform_output: tft.TFTransformOutput
+    tf_transform_output: tft.TFTransformOutput
 ):
     """
     transform_features_signature simply returns a function that transforms
@@ -89,7 +89,7 @@ def transform_features_signature(
     # basically, what Transform component emits is a SavedModel that knows
     # how to transform data. transform_features_layer() simply returns the
     # layer from the Transform.
-    model.tft_layer = tf_transform_output.transform_features_layer()
+    tft_layer = tf_transform_output.transform_features_layer()
 
     @tf.function(
         input_signature=[tf.TensorSpec(shape=[None], dtype=tf.string, name="examples")]
@@ -108,7 +108,7 @@ def transform_features_signature(
         feature_spec = tf_transform_output.raw_feature_spec()
         parsed_features = tf.io.parse_example(serialized_tf_examples, feature_spec)
 
-        transformed_features = model.tft_layer(parsed_features)
+        transformed_features = tft_layer(parsed_features)
 
         return transformed_features
 
