@@ -23,7 +23,7 @@ import tempfile
 import tensorflow as tf
 from absl import logging
 from tfx.utils import io_utils
-from model_card import create_card
+from pipeline.components.HFPusher.model_card import create_card
 from pathlib import Path
 
 from huggingface_hub import Repository
