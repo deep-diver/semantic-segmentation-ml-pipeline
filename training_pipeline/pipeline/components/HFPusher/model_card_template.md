@@ -1,5 +1,5 @@
 ---
-# For reference on model card metadata, see: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
+# For reference on model card metadata, refer to: https://github.com/huggingface/hub-docs/blob/main/modelcard.md?plain=1
 {{card_data}}
 ---
 
@@ -9,7 +9,7 @@
 
 ## Model Description
 
-This is a {{ task | default("segmentation")}} model trained using Vertex AI.
+This is a {{ task | default("segmentation")}} model trained using Tensorflow Extended.
 
 
 # Training Details
