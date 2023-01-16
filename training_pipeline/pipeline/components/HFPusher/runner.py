@@ -256,6 +256,7 @@ def deploy_model_for_hf_hub(
         model_version (str): Model version.
         space_config (dict): Configuration for Space.
         model_metadata (dict): Metadata for model card.
+
         
 
     """
@@ -272,6 +273,7 @@ def deploy_model_for_hf_hub(
 
     # step 1-2
     local_path = "hf_model"
+
     repository = _clone_and_checkout(
         repo_url=repo_url,
         local_path=local_path,
@@ -281,18 +283,24 @@ def deploy_model_for_hf_hub(
     logging.info(
         f"remote repository is cloned, and new branch {model_version} is created"
     )
-
     # step 1-3
+    if not model_metadata:
+        model_metadata = {}
+    card = create_card(model_metadata = model_metadata, 
+                        template_path = "model_card_template.md",
+                        **{"model_id":_MODEL_REPO_KEY, **template_kwargs})
+
+    with open(Path(model_path) / "README.md", "w+") as fp:
+        fp.write(str(card))
+
+    # step 1-4
     _replace_files(model_path, local_path)
+
     logging.info(
         "current version of the model is copied to the cloned local repository"
     )
 
-    # step 1-4
-    card = create_card(model_metadata, **{template_kwargs, "model_id":_MODEL_REPO_KEY})
 
-    with open(Path(local_path) / "README.md", "w+") as fp:
-        fp.write(str(card))
 
     # step 1-5
     _push_to_remote_repo(
