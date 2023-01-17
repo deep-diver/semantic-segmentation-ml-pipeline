@@ -23,6 +23,8 @@ import tempfile
 import tensorflow as tf
 from absl import logging
 from tfx.utils import io_utils
+from pipeline.components.HFPusher.model_card import create_card
+from pathlib import Path
 
 from huggingface_hub import Repository
 from huggingface_hub import HfApi
@@ -104,8 +106,15 @@ def _replace_placeholders(
 
 
 def _replace_files(src_path, dst_path):
-    """replace the contents(files/folders) of the repository with the
-    latest contents"""
+    """Replace the contents(files/folders) of the repository with the
+    latest contents.
+
+    Args:
+        src_path (path or str): Path of the source repository where latest
+        content exists.
+        dst_path (path or str): Path to the destination repository that
+        contains old files.
+    """
 
     not_to_delete = [".gitattributes", ".git"]
 
@@ -135,8 +144,15 @@ def _replace_files(src_path, dst_path):
 def _create_remote_repo(
     access_token: str, repo_id: str, repo_type: str = "model", space_sdk: str = None
 ):
-    """create a remote repository on HuggingFace Hub platform. HTTPError
-    exception is raised when the repository already exists"""
+    """Create a remote repository on HuggingFace Hub platform. HTTPError
+    exception is raised when the repository already exists
+
+    Args:
+        access_token (str): Hugging Face Hub token with write access.
+        repo_id (str): Repository ID to push the repository.
+        repo_type (str, optional): Repository type. Defaults to "model".
+        space_sdk (str, optional): SDK for Space. Defaults to None.
+    """
 
     logging.info(f"repo_id: {repo_id}")
     try:
@@ -168,7 +184,13 @@ def _clone_and_checkout(
 
 
 def _push_to_remote_repo(repo: Repository, commit_msg: str, branch: str = "main"):
-    """push any changes to the remote repository"""
+    """Push any changes to the remote repository
+
+    Args:
+        repo (Repository): Repository class from huggingface_hub.
+        commit_msg (str): Commit message.
+        branch (str, optional): Branch to push the model. Defaults to "main".
+    """
 
     repo.git_add(pattern=".", auto_lfs_track=True)
     repo.git_commit(commit_message=commit_msg)
@@ -182,6 +204,9 @@ def deploy_model_for_hf_hub(
     model_path: str,
     model_version: str,
     space_config: Optional[Dict[Text, Any]] = None,
+    model_metadata: Optional[Dict] = None,
+    **template_kwargs,
+
 ) -> Dict[str, str]:
     """Executes ML model deployment workflow to HuggingFace Hub. Refer to the
     HFPusher component in component.py for generic description of each parame
@@ -197,7 +222,9 @@ def deploy_model_for_hf_hub(
     step 1-3.
         remove every files under the cloned repository(local), and copies the
         model related files to the cloned local repository path.
-    step 1-4.
+    step 1-4
+        write model card.
+    step 1-5.
         push the updated repository to the given branch of remote Model Hub.
 
     step 2. push application to the Space Hub
@@ -210,7 +237,7 @@ def deploy_model_for_hf_hub(
         his process ensures every necessary files are located in the local fil
         e system.
     step 2-3.
-        replacek speical tokens in every files under the given directory.
+        replace speical tokens in every files under the given directory.
     step 2-4.
         clone the created or existing remote repository to the local path.
     step 2-5.
@@ -220,6 +247,18 @@ def deploy_model_for_hf_hub(
         push the updated repository to the remote Space Hub. note that the br
         anch is always set to "main", so that HuggingFace Space could build t
         he application automatically when pushed.
+    
+    Args:
+        username (str): Hugging Face Hub username.
+        access_token (str): Hugging Face Hub access token.
+        repo_name (str): Name of the repository.
+        model_path (str): Path to model file.
+        model_version (str): Model version.
+        space_config (dict): Configuration for Space.
+        model_metadata (dict): Metadata for model card.
+
+        
+
     """
     outputs = {}
 
@@ -234,6 +273,7 @@ def deploy_model_for_hf_hub(
 
     # step 1-2
     local_path = "hf_model"
+
     repository = _clone_and_checkout(
         repo_url=repo_url,
         local_path=local_path,
@@ -243,17 +283,29 @@ def deploy_model_for_hf_hub(
     logging.info(
         f"remote repository is cloned, and new branch {model_version} is created"
     )
-
     # step 1-3
+    if not model_metadata:
+        model_metadata = {}
+    card = create_card(model_metadata = model_metadata, 
+                        template_path = "model_card_template.md",
+                        **{"model_id":_MODEL_REPO_KEY, **template_kwargs})
+
+    with open(Path(model_path) / "README.md", "w+") as fp:
+        fp.write(str(card))
+
+    # step 1-4
     _replace_files(model_path, local_path)
+
     logging.info(
         "current version of the model is copied to the cloned local repository"
     )
 
-    # step 1-4
+
+
+    # step 1-5
     _push_to_remote_repo(
         repo=repository,
-        commit_msg=f"updload new version({model_version})",
+        commit_msg=f"upload new version({model_version})",
         branch=model_version,
     )
     logging.info("updates are pushed to the remote repository")
