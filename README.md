@@ -13,6 +13,10 @@ This repository shows how to build a Machine Learning Pipeline for [Semantic Seg
 
 **NOTE**: The aim of this project is not to serve the most SoTA segmentation model. Our main focus is to demonstrate how to build an end-to-end ML pipeline for semantic segmentation task instead.
 
+**Update 17/02/2023**: This project received the [#TFCommunitySpotlight award](https://twitter.com/TensorFlow/status/1626629821022208020).
+
+**Update 18/01/2023**: We published a blogpost on the TensorFlow blog discussing this project: [End-to-End Pipeline for Segmentation with TFX, Google Cloud, and Hugging Face](https://blog.tensorflow.org/2023/01/end-to-end-pipeline-for-segmentation-tfx-google-cloud-hugging-face.html).
+
 # Project structure
 
 
